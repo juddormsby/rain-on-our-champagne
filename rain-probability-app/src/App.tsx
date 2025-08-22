@@ -14,7 +14,7 @@ interface AppState {
   country: string;
   latitude: string;
   longitude: string;
-  useCoordinates: boolean;
+  showCoordinateInput: boolean;
   selectedDay: string;
   selectedMonth: string;
   selectedPeriod: string;
@@ -48,7 +48,7 @@ function App() {
     country: 'United Kingdom',
     latitude: '',
     longitude: '',
-    useCoordinates: false,
+    showCoordinateInput: false,
     selectedDay: '19',
     selectedMonth: '09',
     selectedPeriod: 'afternoon',
@@ -78,8 +78,8 @@ function App() {
   const fetchRainData = async () => {
     let latitude: number, longitude: number;
 
-    if (state.useCoordinates) {
-      // Validate lat/lon inputs
+    // If coordinate inputs are filled, use them
+    if (state.latitude.trim() && state.longitude.trim()) {
       const lat = parseFloat(state.latitude);
       const lon = parseFloat(state.longitude);
       
@@ -91,27 +91,36 @@ function App() {
       latitude = lat;
       longitude = lon;
     } else {
+      // Try city search first
       if (!state.city.trim()) {
-        setState(prev => ({ ...prev, error: 'Please enter a city name or use coordinates' }));
+        setState(prev => ({ ...prev, error: 'Please enter a city name' }));
         return;
       }
 
       try {
         const locations = await geocodeCity(state.city, state.country);
         if (locations.length === 0) {
-          setState(prev => ({ ...prev, error: 'City not found. Please try coordinates instead.' }));
+          setState(prev => ({ 
+            ...prev, 
+            error: 'City not found. Please check the spelling or enter coordinates below.', 
+            showCoordinateInput: true 
+          }));
           return;
         }
         const location = locations[0];
         latitude = location.latitude;
         longitude = location.longitude;
       } catch (geoError) {
-        setState(prev => ({ ...prev, error: 'City search failed. Please try using coordinates instead.' }));
+        setState(prev => ({ 
+          ...prev, 
+          error: 'City search failed. Please try using coordinates below.', 
+          showCoordinateInput: true 
+        }));
         return;
       }
     }
 
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    setState(prev => ({ ...prev, isLoading: true, error: null, showCoordinateInput: false }));
 
     try {
       const targetDate = new Date(2024, parseInt(state.selectedMonth) - 1, parseInt(state.selectedDay));
@@ -199,88 +208,33 @@ function App() {
         </Link>
       </div>
 
-      {/* Coordinate Toggle */}
-      <div className="coordinate-toggle">
-        <button
-          onClick={() => setState(prev => ({ ...prev, useCoordinates: false }))}
-          className={`toggle-button ${!state.useCoordinates ? '' : 'inactive'}`}
-          style={{ marginRight: '8px' }}
-        >
-          Use City
-        </button>
-        <button
-          onClick={() => setState(prev => ({ ...prev, useCoordinates: true }))}
-          className={`toggle-button ${state.useCoordinates ? '' : 'inactive'}`}
-        >
-          Use Coordinates
-        </button>
-      </div>
-
       {/* Controls */}
-      <div className={state.useCoordinates ? "controls-coordinates" : "controls-grid"}>
-        {!state.useCoordinates ? (
-          <>
-            <div>
-              <label htmlFor="city" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>City</label>
-              <input
-                id="city"
-                type="text"
-                value={state.city}
-                onChange={(e) => setState(prev => ({ ...prev, city: e.target.value }))}
-                className="input-field"
-                style={{ width: '100%' }}
-                placeholder="Enter city name"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="country" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Country</label>
-              <input
-                id="country"
-                type="text"
-                value={state.country}
-                onChange={(e) => setState(prev => ({ ...prev, country: e.target.value }))}
-                className="input-field"
-                style={{ width: '100%' }}
-                placeholder="Enter country"
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <label htmlFor="latitude" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Latitude</label>
-              <input
-                id="latitude"
-                type="number"
-                step="any"
-                min="-90"
-                max="90"
-                value={state.latitude}
-                onChange={(e) => setState(prev => ({ ...prev, latitude: e.target.value }))}
-                className="input-field"
-                style={{ width: '100%' }}
-                placeholder="e.g. 51.5074"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="longitude" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Longitude</label>
-              <input
-                id="longitude"
-                type="number"
-                step="any"
-                min="-180"
-                max="180"
-                value={state.longitude}
-                onChange={(e) => setState(prev => ({ ...prev, longitude: e.target.value }))}
-                className="input-field"
-                style={{ width: '100%' }}
-                placeholder="e.g. -0.1278"
-              />
-            </div>
-          </>
-        )}
+      <div className="controls-grid">
+        <div>
+          <label htmlFor="city" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>City</label>
+          <input
+            id="city"
+            type="text"
+            value={state.city}
+            onChange={(e) => setState(prev => ({ ...prev, city: e.target.value }))}
+            className="input-field"
+            style={{ width: '100%' }}
+            placeholder="Enter city name"
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="country" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Country</label>
+          <input
+            id="country"
+            type="text"
+            value={state.country}
+            onChange={(e) => setState(prev => ({ ...prev, country: e.target.value }))}
+            className="input-field"
+            style={{ width: '100%' }}
+            placeholder="Enter country"
+          />
+        </div>
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
           <div>
@@ -345,6 +299,76 @@ function App() {
       </div>
 
       {state.error && <ErrorMessage error={state.error} />}
+
+      {/* Coordinate fallback inputs - only show when city search fails */}
+      {state.showCoordinateInput && (
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{ 
+            background: 'var(--paper)', 
+            border: '1px solid var(--line)', 
+            borderRadius: '12px', 
+            padding: '24px',
+            boxShadow: '0 4px 12px rgba(46,42,40,.06)'
+          }}>
+            <h3 style={{ 
+              marginTop: '0', 
+              marginBottom: '16px', 
+              fontFamily: 'var(--font-display)', 
+              fontSize: '18px',
+              color: 'var(--accent-orange)' 
+            }}>
+              Try using coordinates instead
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label htmlFor="latitude" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Latitude (-90 to 90)
+                </label>
+                <input
+                  id="latitude"
+                  type="number"
+                  step="any"
+                  min="-90"
+                  max="90"
+                  value={state.latitude}
+                  onChange={(e) => setState(prev => ({ ...prev, latitude: e.target.value }))}
+                  className="input-field"
+                  style={{ width: '100%' }}
+                  placeholder="e.g. 51.5074"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="longitude" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Longitude (-180 to 180)
+                </label>
+                <input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  min="-180"
+                  max="180"
+                  value={state.longitude}
+                  onChange={(e) => setState(prev => ({ ...prev, longitude: e.target.value }))}
+                  className="input-field"
+                  style={{ width: '100%' }}
+                  placeholder="e.g. -0.1278"
+                />
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', marginTop: '16px' }}>
+              <button 
+                onClick={fetchRainData}
+                disabled={state.isLoading || !state.latitude.trim() || !state.longitude.trim()}
+                className="button-primary"
+                style={{ fontSize: '14px', padding: '8px 24px' }}
+              >
+                {state.isLoading ? 'Checking weather...' : 'Try Coordinates'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {state.isLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
