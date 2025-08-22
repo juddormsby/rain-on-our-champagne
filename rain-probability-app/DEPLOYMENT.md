@@ -31,7 +31,7 @@ The build process:
 
 Once deployed with the environment variable:
 - Users can click "🐔 Ask Poultry" to get AI-powered champagne recommendations
-- The function uses OpenAI's GPT-4o-mini for cost-effective responses
+- The function uses OpenAI's latest GPT-5-mini-2025-08-07 for cutting-edge responses
 - Fallback responses ensure the feature works even if OpenAI is unavailable
 
 ## Troubleshooting

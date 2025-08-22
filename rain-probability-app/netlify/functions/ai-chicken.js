@@ -66,9 +66,9 @@ Weather Data:
 
 Give a witty, chicken-themed recommendation about whether this is good champagne weather. Be whimsical but informative. Include chicken sounds like "bawk" naturally. Keep it under 280 characters and make it feel like a tweet from an opinionated chicken.`;
 
-    console.log('[AI Chicken] Calling OpenAI API with GPT-4o');
+    console.log('[AI Chicken] Calling OpenAI API with GPT-5-mini');
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5-mini-2025-08-07",
       messages: [
         {
           role: "system",
@@ -89,7 +89,7 @@ Give a witty, chicken-themed recommendation about whether this is good champagne
     const response = {
       recommendation,
       timestamp: new Date().toISOString(),
-      model: "gpt-4o",
+      model: "gpt-5-mini-2025-08-07",
       weatherContext: weatherData
     };
 
