@@ -303,7 +303,7 @@ function App() {
 
               {/* Footnote */}
               <div className="footnote">
-                Data: Open-Meteo historical reanalysis (local time, rain &gt; 0.0 mm).
+                Data: Open-Meteo historical reanalysis (local time, rain &gt; {RAIN_THRESHOLD_MM} mm).
               </div>
             </>
           )}
