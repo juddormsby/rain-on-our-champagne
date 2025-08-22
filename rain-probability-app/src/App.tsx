@@ -19,6 +19,7 @@ interface AppState {
   selectedMonth: string;
   selectedPeriod: string;
   isLoading: boolean;
+  hasData: boolean;
   error: string | null;
   hourlyData: (number | null)[];
   windowProbabilities: WindowProbabilities;
@@ -53,6 +54,7 @@ function App() {
     selectedMonth: '09',
     selectedPeriod: 'afternoon',
     isLoading: false,
+    hasData: false,
     error: null,
     hourlyData: [],
     windowProbabilities: {},
@@ -75,8 +77,10 @@ function App() {
     return `${Math.round(p10)}°C – ${Math.round(p90)}°C`;
   };
 
-  const fetchRainData = async () => {
+  const fetchRainData = async (retryCount = 0) => {
     let latitude: number, longitude: number;
+
+    console.log(`[RainApp] Starting data fetch (attempt ${retryCount + 1})`);
 
     // If coordinate inputs are filled, use them
     if (state.latitude.trim() && state.longitude.trim()) {
@@ -90,6 +94,7 @@ function App() {
       
       latitude = lat;
       longitude = lon;
+      console.log(`[RainApp] Using manual coordinates: ${latitude}, ${longitude}`);
     } else {
       // Try city search first
       if (!state.city.trim()) {
@@ -98,6 +103,7 @@ function App() {
       }
 
       try {
+        console.log(`[RainApp] Geocoding city: ${state.city}, ${state.country}`);
         const locations = await geocodeCity(state.city, state.country);
         if (locations.length === 0) {
           setState(prev => ({ 
@@ -110,7 +116,9 @@ function App() {
         const location = locations[0];
         latitude = location.latitude;
         longitude = location.longitude;
+        console.log(`[RainApp] Geocoded to: ${latitude}, ${longitude}`);
       } catch (geoError) {
+        console.error('[RainApp] Geocoding error:', geoError);
         setState(prev => ({ 
           ...prev, 
           error: 'City search failed. Please try using coordinates below.', 
@@ -120,17 +128,31 @@ function App() {
       }
     }
 
+    // Set loading but preserve existing data initially
     setState(prev => ({ ...prev, isLoading: true, error: null, showCoordinateInput: false }));
 
     try {
       const targetDate = new Date(2024, parseInt(state.selectedMonth) - 1, parseInt(state.selectedDay));
+      console.log(`[RainApp] Target date: ${targetDate.toISOString().slice(0, 10)}`);
 
       // Get daily data for rain probability calculation
+      console.log('[RainApp] Fetching daily data...');
       const dailyData = await fetchDaily(latitude, longitude);
+      console.log(`[RainApp] Daily data received, time entries: ${dailyData.daily?.time?.length || 0}`);
+      
       const dailyStats = calculateDailyRainProbability(dailyData, targetDate);
+      console.log(`[RainApp] Daily stats: ${dailyStats.totalYears} years, ${dailyStats.rainyYears} rainy, probability: ${dailyStats.probability}`);
+      
       const tempPercentiles = calculateTemperaturePercentiles(dailyData, targetDate);
+      console.log(`[RainApp] Temperature percentiles calculated for ${tempPercentiles.years.length} years`);
+
+      // Validate daily data before proceeding
+      if (dailyStats.totalYears === 0) {
+        throw new Error('No historical data available for this date and location');
+      }
 
       // Get hourly data for the specific date
+      console.log(`[RainApp] Fetching hourly data for ${dailyStats.years.length} years...`);
       const hourlyData = await fetchHourlyForYears(
         latitude,
         longitude,
@@ -139,9 +161,19 @@ function App() {
         dailyStats.years
       );
 
+      // Validate hourly data
+      const validHourlyYears = hourlyData.filter(year => year.hours !== null).length;
+      console.log(`[RainApp] Hourly data received for ${validHourlyYears}/${hourlyData.length} years`);
+      
+      if (validHourlyYears === 0) {
+        console.warn('[RainApp] No valid hourly data received, using daily data only');
+      }
+
       const hourlyProbs = calculateHourlyProbabilities(hourlyData);
       const windowProbs = calculateWindowProbabilities(hourlyData);
       const sessionTempPercentiles = calculateSessionTemperaturePercentiles(hourlyData);
+
+      console.log('[RainApp] All calculations completed successfully');
 
       setState(prev => ({
         ...prev,
@@ -150,13 +182,50 @@ function App() {
         dailyProbability: (dailyStats.probability || 0) * 100,
         temperaturePercentiles: tempPercentiles,
         sessionTemperaturePercentiles: sessionTempPercentiles,
-        isLoading: false
+        isLoading: false,
+        hasData: true
       }));
 
     } catch (error) {
+      console.error('[RainApp] Error during data fetch:', error);
+      
+      // Check if it's a rate limit error (429)
+      const isRateLimited = error instanceof Error && error.message.includes('429');
+      const isTimeout = error instanceof Error && (error.message.includes('timeout') || error.message.includes('AbortError'));
+      
+      if ((isRateLimited || isTimeout) && retryCount < 2) {
+        const delayMs = isRateLimited ? 5000 + (retryCount * 2000) : 1000; // Longer delay for rate limits
+        console.log(`[RainApp] ${isRateLimited ? 'Rate limited' : 'Timeout'}, retrying in ${delayMs}ms...`);
+        
+        setState(prev => ({
+          ...prev,
+          error: `${isRateLimited ? 'API rate limit reached' : 'Request timed out'}, retrying in ${Math.ceil(delayMs/1000)} seconds...`,
+          isLoading: true
+        }));
+        
+        setTimeout(() => {
+          fetchRainData(retryCount + 1);
+        }, delayMs);
+        return;
+      }
+      
+      // Format error message for user
+      let userError = 'An unexpected error occurred';
+      if (error instanceof Error) {
+        if (error.message.includes('429')) {
+          userError = 'API rate limit exceeded. Please wait a few minutes before trying again, or try using an incognito/private browser window.';
+        } else if (error.message.includes('timeout') || error.message.includes('AbortError')) {
+          userError = 'Request timed out. Please check your internet connection and try again.';
+        } else if (error.message.includes('No historical data')) {
+          userError = error.message;
+        } else {
+          userError = `Weather data fetch failed: ${error.message}`;
+        }
+      }
+      
       setState(prev => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        error: userError,
         isLoading: false
       }));
     }
@@ -289,7 +358,7 @@ function App() {
       {/* Go Button */}
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <button 
-          onClick={fetchRainData}
+          onClick={() => fetchRainData()}
           disabled={state.isLoading || !state.city.trim()}
           className="button-primary"
           style={{ fontSize: '16px', padding: '0 32px' }}
@@ -358,7 +427,7 @@ function App() {
             </div>
             <div style={{ textAlign: 'center', marginTop: '16px' }}>
               <button 
-                onClick={fetchRainData}
+                onClick={() => fetchRainData()}
                 disabled={state.isLoading || !state.latitude.trim() || !state.longitude.trim()}
                 className="button-primary"
                 style={{ fontSize: '14px', padding: '8px 24px' }}
@@ -386,6 +455,8 @@ function App() {
                     percentage={state.dailyProbability}
                     label="Rain on the day"
                     size={200}
+                    isLoading={state.isLoading}
+                    hasData={state.hasData}
                   />
                   {state.temperaturePercentiles && (
                     <div style={{ 
@@ -410,6 +481,8 @@ function App() {
                     percentage={currentPeriod ? (currentPeriod.probability || 0) * 100 : 0}
                     label={`Rain during ${getCurrentPeriodLabel()} session`}
                     size={200}
+                    isLoading={state.isLoading}
+                    hasData={state.hasData}
                   />
                   {state.sessionTemperaturePercentiles && state.sessionTemperaturePercentiles[state.selectedPeriod] && (
                     <div style={{ 
@@ -490,7 +563,11 @@ function App() {
               {/* Chart */}
               <div className="chart-container">
                 <h3 className="chart-title">Hourly chance of rain</h3>
-                <HourlyChart hourlyProbabilities={state.hourlyData} />
+                <HourlyChart 
+                hourlyProbabilities={state.hourlyData} 
+                isLoading={state.isLoading}
+                hasData={state.hasData}
+              />
               </div>
 
               {/* Footnote */}

@@ -51,14 +51,21 @@ export async function geocodeCity(query: string, country?: string): Promise<Geoc
   url.searchParams.set('language', 'en');
   url.searchParams.set('format', 'json');
   
+  console.log(`[OpenMeteo] Geocoding request: ${query}, ${country || 'no country'}`);
+  console.log(`[OpenMeteo] Geocoding URL: ${url.toString()}`);
+  
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
   
   try {
+    const startTime = Date.now();
     const response = await cachedFetch(url.toString(), { 
       signal: controller.signal 
     });
     clearTimeout(timeoutId);
+    
+    const duration = Date.now() - startTime;
+    console.log(`[OpenMeteo] Geocoding response: ${response.status} in ${duration}ms`);
     
     if (!response.ok) {
       throw new Error(`Geocoding failed: ${response.status}`);
@@ -66,6 +73,11 @@ export async function geocodeCity(query: string, country?: string): Promise<Geoc
     
     const data = await response.json();
     const results = (data.results || []) as GeocodingResult[];
+    
+    console.log(`[OpenMeteo] Geocoding found ${results.length} results`);
+    if (results.length > 0) {
+      console.log(`[OpenMeteo] First result: ${results[0].name}, ${results[0].country} (${results[0].latitude}, ${results[0].longitude})`);
+    }
     
     if (results.length === 0) {
       return [];
@@ -83,6 +95,7 @@ export async function geocodeCity(query: string, country?: string): Promise<Geoc
     return results;
   } catch (error) {
     clearTimeout(timeoutId);
+    console.error('[OpenMeteo] Geocoding error:', error);
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Request timeout');
     }
@@ -105,22 +118,36 @@ export async function fetchDaily(
   url.searchParams.set('temperature_unit', 'celsius');
   url.searchParams.set('timezone', 'auto');
   
+  console.log(`[OpenMeteo] Fetching daily data for lat: ${lat}, lon: ${lon}, startDate: ${startDate}, endDate: ${endDate || 'current'}`);
+  console.log(`[OpenMeteo] Daily data URL: ${url.toString()}`);
+  
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
   
   try {
+    const startTime = Date.now();
     const response = await cachedFetch(url.toString(), { 
       signal: controller.signal 
     });
     clearTimeout(timeoutId);
     
+    const duration = Date.now() - startTime;
+    console.log(`[OpenMeteo] Daily data response: ${response.status} in ${duration}ms`);
+    
     if (!response.ok) {
       throw new Error(`Daily data fetch failed: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    const dailyDataCount = data.daily?.time?.length || 0;
+    console.log(`[OpenMeteo] Daily data received: ${dailyDataCount} days`);
+    if (dailyDataCount > 0) {
+      console.log(`[OpenMeteo] Daily data range: ${data.daily.time[0]} to ${data.daily.time[dailyDataCount - 1]}`);
+    }
+    return data;
   } catch (error) {
     clearTimeout(timeoutId);
+    console.error('[OpenMeteo] Daily data error:', error);
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Request timeout');
     }
@@ -153,17 +180,25 @@ export async function fetchHourlyForYears(
 ): Promise<HourlyYearResult[]> {
   const limit = pLimit(concurrency);
   
+  console.log(`[OpenMeteo] Fetching hourly data for lat: ${lat}, lon: ${lon}, month: ${month}, day: ${day}, years: ${years.join(',')}`);
+  
   const tasks = years.map(year => 
     limit(async (): Promise<HourlyYearResult> => {
       try {
         const url = createHourlyUrl(lat, lon, year, month, day);
+        console.log(`[OpenMeteo] Fetching hourly data for year: ${year}, URL: ${url}`);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
         
+        const startTime = Date.now();
         const response = await cachedFetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
         
+        const duration = Date.now() - startTime;
+        console.log(`[OpenMeteo] Hourly data response for year ${year}: ${response.status} in ${duration}ms`);
+        
         if (!response.ok) {
+          console.warn(`[OpenMeteo] Failed to fetch hourly data for ${year}: ${response.status}`);
           return { year, hours: null };
         }
         
@@ -171,8 +206,11 @@ export async function fetchHourlyForYears(
         const hourly = data.hourly as HourlyData;
         
         if (!hourly?.time) {
+          console.warn(`[OpenMeteo] No hourly data found for ${year}`);
           return { year, hours: null };
         }
+        
+        console.log(`[OpenMeteo] Successfully fetched hourly data for ${year}: ${hourly.time.length} hours`);
         
         const hours = hourly.time.map((time, i) => ({
           time,
@@ -185,11 +223,14 @@ export async function fetchHourlyForYears(
         
         return { year, hours };
       } catch (error) {
-        console.warn(`Failed to fetch hourly data for ${year}:`, error);
+        console.warn(`[OpenMeteo] Failed to fetch hourly data for ${year}:`, error);
         return { year, hours: null };
       }
     })
   );
   
-  return Promise.all(tasks);
+  const results = await Promise.all(tasks);
+  const successfulYears = results.filter(result => result.hours !== null).length;
+  console.log(`[OpenMeteo] Hourly data fetch completed: ${successfulYears}/${results.length} years successful`);
+  return results;
 } 
