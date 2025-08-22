@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AIChickenProps {
   weatherData: {
@@ -19,20 +19,29 @@ interface ChickenResponse {
   recommendation: string;
   timestamp: string;
   fallback?: boolean;
+  model?: string;
+  weatherContext?: any;
+  error?: string;
 }
 
 export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasAutoFetched, setHasAutoFetched] = useState(false);
 
-  const getChickenAdvice = async () => {
-    if (!weatherData) return;
+  const getChickenAdvice = async (isAutomatic = false) => {
+    if (!weatherData) {
+      console.log('[AI Chicken] No weather data available');
+      return;
+    }
 
+    console.log('[AI Chicken] Starting advice request:', { isAutomatic, weatherData });
     setIsLoading(true);
     setError(null);
 
     try {
+      console.log('[AI Chicken] Calling Netlify function...');
       const response = await fetch('/.netlify/functions/ai-chicken', {
         method: 'POST',
         headers: {
@@ -41,19 +50,47 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
         body: JSON.stringify({ weatherData }),
       });
 
+      console.log('[AI Chicken] Function response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('[AI Chicken] Function error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const data: ChickenResponse = await response.json();
+      console.log('[AI Chicken] Function response data:', data);
+      
       setRecommendation(data.recommendation);
+      
+      if (data.fallback) {
+        console.warn('[AI Chicken] Received fallback response:', data.error);
+      }
     } catch (err) {
-      console.error('Failed to get chicken advice:', err);
+      console.error('[AI Chicken] Request failed:', err);
       setError('Bawk bawk! The chicken is having technical difficulties 🐔');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Auto-fetch when weather data becomes available
+  useEffect(() => {
+    if (weatherData && isVisible && !hasAutoFetched && !isLoading) {
+      console.log('[AI Chicken] Auto-fetching chicken advice for new weather data');
+      setHasAutoFetched(true);
+      getChickenAdvice(true);
+    }
+  }, [weatherData, isVisible, hasAutoFetched, isLoading]);
+
+  // Reset auto-fetch flag when weather data changes
+  useEffect(() => {
+    if (weatherData) {
+      setHasAutoFetched(false);
+      setRecommendation(null);
+      setError(null);
+    }
+  }, [weatherData?.location, weatherData?.date, weatherData?.session]);
 
   if (!isVisible || !weatherData) {
     return null;
@@ -84,7 +121,7 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
             </p>
           </div>
           <button 
-            onClick={getChickenAdvice}
+            onClick={() => getChickenAdvice(false)}
             disabled={isLoading}
             className="chicken-button"
             style={{
@@ -99,7 +136,7 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
               transition: 'all 0.2s ease'
             }}
           >
-            {isLoading ? '🥚 Thinking...' : '🐔 Ask Poultry'}
+            {isLoading ? '🥚 Thinking...' : '🐔 Ask Again'}
           </button>
         </div>
 
@@ -147,6 +184,20 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
             fontFamily: 'var(--font-body)'
           }}>
             {error}
+            <button 
+              onClick={() => getChickenAdvice(false)}
+              style={{
+                marginLeft: '8px',
+                background: 'none',
+                border: 'none',
+                color: '#C53030',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Try again
+            </button>
           </div>
         )}
 

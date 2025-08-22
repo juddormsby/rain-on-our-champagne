@@ -1,5 +1,5 @@
 import pLimit from 'p-limit';
-import { DEFAULT_CONCURRENCY, DEFAULT_START_YEAR } from './config';
+import { DEFAULT_START_YEAR } from './config';
 import { cachedFetch } from './cache';
 
 const BASE_URL = 'https://archive-api.open-meteo.com/v1/archive';
@@ -176,56 +176,100 @@ export async function fetchHourlyForYears(
   month: number,
   day: number,
   years: number[],
-  concurrency = DEFAULT_CONCURRENCY
+  concurrency = 3 // Reduced from DEFAULT_CONCURRENCY to be more conservative
 ): Promise<HourlyYearResult[]> {
+  // Sort years to prioritize recent data and spread requests over time
+  const sortedYears = [...years].sort((a, b) => b - a); // Most recent first
   const limit = pLimit(concurrency);
   
-  console.log(`[OpenMeteo] Fetching hourly data for lat: ${lat}, lon: ${lon}, month: ${month}, day: ${day}, years: ${years.join(',')}`);
+  console.log(`[OpenMeteo] Fetching hourly data for lat: ${lat}, lon: ${lon}, month: ${month}, day: ${day}, years: ${sortedYears.length} years (concurrency: ${concurrency})`);
   
-  const tasks = years.map(year => 
+  const tasks = sortedYears.map((year, index) => 
     limit(async (): Promise<HourlyYearResult> => {
-      try {
-        const url = createHourlyUrl(lat, lon, year, month, day);
-        console.log(`[OpenMeteo] Fetching hourly data for year: ${year}, URL: ${url}`);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        const startTime = Date.now();
-        const response = await cachedFetch(url, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        
-        const duration = Date.now() - startTime;
-        console.log(`[OpenMeteo] Hourly data response for year ${year}: ${response.status} in ${duration}ms`);
-        
-        if (!response.ok) {
-          console.warn(`[OpenMeteo] Failed to fetch hourly data for ${year}: ${response.status}`);
-          return { year, hours: null };
-        }
-        
-        const data = await response.json();
-        const hourly = data.hourly as HourlyData;
-        
-        if (!hourly?.time) {
-          console.warn(`[OpenMeteo] No hourly data found for ${year}`);
-          return { year, hours: null };
-        }
-        
-        console.log(`[OpenMeteo] Successfully fetched hourly data for ${year}: ${hourly.time.length} hours`);
-        
-        const hours = hourly.time.map((time, i) => ({
-          time,
-          rain: hourly.rain?.[i] ?? null,
-          precip: hourly.precipitation?.[i] ?? null,
-          temp: hourly.temperature_2m?.[i] ?? null,
-          apparentTemp: hourly.apparent_temperature?.[i] ?? null,
-          dewPoint: hourly.dew_point_2m?.[i] ?? null,
-        }));
-        
-        return { year, hours };
-      } catch (error) {
-        console.warn(`[OpenMeteo] Failed to fetch hourly data for ${year}:`, error);
-        return { year, hours: null };
+      // Add progressive delay between requests to avoid overwhelming the API
+      const delay = index * 100; // 100ms delay between each request
+      if (delay > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
+      
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount <= maxRetries) {
+        try {
+          const url = createHourlyUrl(lat, lon, year, month, day);
+          console.log(`[OpenMeteo] Fetching hourly data for year: ${year} (attempt ${retryCount + 1}/${maxRetries + 1})`);
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
+          
+          const startTime = Date.now();
+          const response = await cachedFetch(url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          
+          const duration = Date.now() - startTime;
+          console.log(`[OpenMeteo] Hourly data response for year ${year}: ${response.status} in ${duration}ms`);
+          
+          if (response.status === 429) {
+            // Rate limited - implement exponential backoff
+            const backoffTime = Math.min(1000 * Math.pow(2, retryCount), 10000); // Max 10 seconds
+            console.warn(`[OpenMeteo] Rate limited for year ${year}, retrying in ${backoffTime}ms (attempt ${retryCount + 1}/${maxRetries + 1})`);
+            
+            if (retryCount < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, backoffTime));
+              retryCount++;
+              continue;
+            } else {
+              console.error(`[OpenMeteo] Max retries reached for year ${year}, skipping`);
+              return { year, hours: null };
+            }
+          }
+          
+          if (!response.ok) {
+            console.warn(`[OpenMeteo] Failed to fetch hourly data for ${year}: ${response.status}`);
+            return { year, hours: null };
+          }
+          
+          const data = await response.json();
+          const hourly = data.hourly as HourlyData;
+          
+          if (!hourly?.time) {
+            console.warn(`[OpenMeteo] No hourly data found for ${year}`);
+            return { year, hours: null };
+          }
+          
+          console.log(`[OpenMeteo] Successfully fetched hourly data for ${year}: ${hourly.time.length} hours`);
+          
+          const hours = hourly.time.map((time, i) => ({
+            time,
+            rain: hourly.rain?.[i] ?? null,
+            precip: hourly.precipitation?.[i] ?? null,
+            temp: hourly.temperature_2m?.[i] ?? null,
+            apparentTemp: hourly.apparent_temperature?.[i] ?? null,
+            dewPoint: hourly.dew_point_2m?.[i] ?? null,
+          }));
+          
+          return { year, hours };
+          
+        } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            console.warn(`[OpenMeteo] Request timeout for year ${year}, retrying...`);
+          } else {
+            console.warn(`[OpenMeteo] Request error for year ${year}:`, error);
+          }
+          
+          if (retryCount < maxRetries) {
+            const backoffTime = 1000 * Math.pow(2, retryCount); // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+            retryCount++;
+          } else {
+            console.warn(`[OpenMeteo] Max retries reached for year ${year} due to error:`, error);
+            return { year, hours: null };
+          }
+        }
+      }
+      
+      return { year, hours: null };
     })
   );
   

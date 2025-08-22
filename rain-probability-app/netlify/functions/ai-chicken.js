@@ -1,6 +1,8 @@
 const { OpenAI } = require('openai');
 
 exports.handler = async (event, context) => {
+  console.log('[AI Chicken] Function invoked');
+  
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -9,6 +11,7 @@ exports.handler = async (event, context) => {
   };
 
   if (event.httpMethod === 'OPTIONS') {
+    console.log('[AI Chicken] CORS preflight request');
     return {
       statusCode: 200,
       headers,
@@ -17,6 +20,7 @@ exports.handler = async (event, context) => {
   }
 
   if (event.httpMethod !== 'POST') {
+    console.log('[AI Chicken] Invalid method:', event.httpMethod);
     return {
       statusCode: 405,
       headers,
@@ -25,9 +29,11 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('[AI Chicken] Parsing request body');
     const { weatherData } = JSON.parse(event.body);
     
     if (!weatherData) {
+      console.log('[AI Chicken] No weather data provided');
       return {
         statusCode: 400,
         headers,
@@ -35,6 +41,14 @@ exports.handler = async (event, context) => {
       };
     }
 
+    console.log('[AI Chicken] Weather data received:', JSON.stringify(weatherData, null, 2));
+
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('[AI Chicken] OpenAI API key not found in environment variables');
+      throw new Error('OpenAI API key not configured');
+    }
+
+    console.log('[AI Chicken] Initializing OpenAI client');
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -52,8 +66,9 @@ Weather Data:
 
 Give a witty, chicken-themed recommendation about whether this is good champagne weather. Be whimsical but informative. Include chicken sounds like "bawk" naturally. Keep it under 280 characters and make it feel like a tweet from an opinionated chicken.`;
 
+    console.log('[AI Chicken] Calling OpenAI API with GPT-4o');
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -69,18 +84,25 @@ Give a witty, chicken-themed recommendation about whether this is good champagne
     });
 
     const recommendation = completion.choices[0].message.content.trim();
+    console.log('[AI Chicken] AI response generated:', recommendation);
 
+    const response = {
+      recommendation,
+      timestamp: new Date().toISOString(),
+      model: "gpt-4o",
+      weatherContext: weatherData
+    };
+
+    console.log('[AI Chicken] Returning successful response');
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ 
-        recommendation,
-        timestamp: new Date().toISOString()
-      }),
+      body: JSON.stringify(response),
     };
 
   } catch (error) {
-    console.error('AI Chicken Error:', error);
+    console.error('[AI Chicken] Error occurred:', error);
+    console.error('[AI Chicken] Error stack:', error.stack);
     
     // Fallback chicken responses if API fails
     const fallbackResponses = [
@@ -91,13 +113,15 @@ Give a witty, chicken-themed recommendation about whether this is good champagne
     
     const fallback = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
 
+    console.log('[AI Chicken] Using fallback response:', fallback);
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({ 
         recommendation: fallback,
         timestamp: new Date().toISOString(),
-        fallback: true
+        fallback: true,
+        error: error.message
       }),
     };
   }
