@@ -252,11 +252,12 @@ h1, h2, h3 {
 
 /* Logo and header */
 .logo-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 48px;
+  gap: 16px;
+  margin-bottom: 32px;
 }
 
 .logo-svg {
@@ -318,4 +319,68 @@ h1, h2, h3 {
   margin-top: 32px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
+}
+
+/* About Page Styles */
+.about-container {
+  min-height: 100vh;
+  background: var(--bg-cream);
+  padding: 32px;
+  font-family: var(--font-body);
+}
+
+.about-content {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 48px;
+  box-shadow: 0 6px 18px rgba(46,42,40,.08);
+  line-height: 1.6;
+}
+
+.about-content h1 {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 32px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.about-content h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--accent-orange);
+  margin: 32px 0 16px 0;
+  letter-spacing: 0.02em;
+}
+
+.about-content p {
+  color: var(--ink);
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.about-content ul {
+  color: var(--ink);
+  margin: 16px 0;
+  padding-left: 24px;
+}
+
+.about-content li {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.about-content a {
+  color: var(--accent-orange);
+  text-decoration: none;
+}
+
+.about-content a:hover {
+  text-decoration: underline;
 }
