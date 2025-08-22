@@ -123,7 +123,7 @@ function App() {
             href="/people-logo.svg"
           />
         </svg>
-        <h1 className="app-title">RAIN ON OUR CHAMPAGNE</h1>
+        <h1 className="app-title">WILL IT RAIN ON OUR CHAMPAGNE?</h1>
       </div>
 
       {/* Controls */}
