@@ -35,7 +35,7 @@ export interface HourlyYearResult {
   }> | null;
 }
 
-export async function geocodeCity(query: string, country?: string): Promise<GeocodingResult> {
+export async function geocodeCity(query: string, country?: string): Promise<GeocodingResult[]> {
   const url = new URL(GEOCODE_URL);
   url.searchParams.set('name', query);
   url.searchParams.set('count', '5');
@@ -59,15 +59,19 @@ export async function geocodeCity(query: string, country?: string): Promise<Geoc
     const results = (data.results || []) as GeocodingResult[];
     
     if (results.length === 0) {
-      throw new Error('No location found');
+      return [];
     }
     
-    // Prefer country match if provided
-    const best = country 
-      ? (results.find(r => r.country_code === country.toUpperCase()) || results[0])
-      : results[0];
+    // Sort by country match if provided
+    if (country) {
+      return results.sort((a, b) => {
+        const aMatch = a.country_code === country.toUpperCase() ? 1 : 0;
+        const bMatch = b.country_code === country.toUpperCase() ? 1 : 0;
+        return bMatch - aMatch;
+      });
+    }
     
-    return best;
+    return results;
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
