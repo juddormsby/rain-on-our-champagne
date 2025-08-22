@@ -388,7 +388,7 @@ function App() {
           className="button-primary"
           style={{ fontSize: '16px', padding: '0 32px' }}
         >
-          {state.isLoading ? 'Checking weather...' : 'Check Rain Probability'}
+          {state.isLoading ? 'Uncorking weather data... 🍾' : 'Check Rain Probability'}
         </button>
       </div>
 
@@ -457,7 +457,7 @@ function App() {
                 className="button-primary"
                 style={{ fontSize: '14px', padding: '8px 24px' }}
               >
-                {state.isLoading ? 'Checking weather...' : 'Try Coordinates'}
+                                  {state.isLoading ? 'Uncorking weather data... 🍾' : 'Try Coordinates'}
               </button>
             </div>
           </div>

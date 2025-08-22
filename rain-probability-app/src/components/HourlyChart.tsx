@@ -39,7 +39,7 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
               fontSize: '14px', 
               color: 'var(--ink-muted)' 
             }}>
-              Loading hourly data...
+              Uncorking hourly data... 🍾
             </div>
           </div>
         </div>

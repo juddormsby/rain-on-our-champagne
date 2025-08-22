@@ -136,7 +136,7 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
               transition: 'all 0.2s ease'
             }}
           >
-            {isLoading ? '🥚 Thinking...' : '🐔 Ask Again'}
+            {isLoading ? '🍾 Sipping...' : '🐔 Ask Again'}
           </button>
         </div>
 
@@ -167,7 +167,7 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
             fontSize: '14px'
           }}>
             <div className="loading-spinner" style={{ margin: '0 auto 12px' }}></div>
-            Poultry is consulting the weather spirits...
+            Poultry is sipping champagne and pondering the weather... 🍾
           </div>
         )}
 
