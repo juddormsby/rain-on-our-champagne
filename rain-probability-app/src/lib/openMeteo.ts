@@ -92,7 +92,8 @@ export async function fetchDaily(
   url.searchParams.set('longitude', String(lon));
   url.searchParams.set('start_date', startDate);
   url.searchParams.set('end_date', endDate || new Date().toISOString().slice(0, 10));
-  url.searchParams.set('daily', 'precipitation_sum,rain_sum');
+  url.searchParams.set('daily', 'precipitation_sum,rain_sum,temperature_2m_max,temperature_2m_min,temperature_2m_mean');
+  url.searchParams.set('temperature_unit', 'celsius');
   url.searchParams.set('timezone', 'auto');
   
   const controller = new AbortController();
@@ -126,7 +127,8 @@ function createHourlyUrl(lat: number, lon: number, year: number, month: number, 
   const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   url.searchParams.set('start_date', dateStr);
   url.searchParams.set('end_date', dateStr);
-  url.searchParams.set('hourly', 'rain,precipitation');
+  url.searchParams.set('hourly', 'rain,precipitation,temperature_2m,apparent_temperature,dew_point_2m');
+  url.searchParams.set('temperature_unit', 'celsius');
   url.searchParams.set('timezone', 'auto');
   
   return url.toString();
