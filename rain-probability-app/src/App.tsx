@@ -176,10 +176,6 @@ function App() {
         throw new Error('No historical data available for this date and location');
       }
 
-      // Wait a moment before starting hourly requests to avoid overwhelming the API
-      console.log('[RainApp] Daily data complete, waiting before hourly requests...');
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
-      
       // Get hourly data for the specific date
       console.log(`[RainApp] Fetching hourly data for ${dailyStats.years.length} years...`);
       const hourlyData = await fetchHourlyForYears(

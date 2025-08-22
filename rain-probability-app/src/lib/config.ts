@@ -7,5 +7,5 @@ export const WINDOWS = [
 
 export const RAIN_THRESHOLD_MM = 0.2;
 export const DEFAULT_START_YEAR = 1940;
-export const DEFAULT_CONCURRENCY = 6; // Balanced for speed vs API stability
+export const DEFAULT_CONCURRENCY = 12; // Aggressive for maximum speed
 export const CACHE_TTL_DAYS = 30; 

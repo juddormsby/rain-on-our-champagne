@@ -122,7 +122,7 @@ export async function fetchDaily(
   console.log(`[OpenMeteo] Daily data URL: ${url.toString()}`);
   
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000); // Reduced for speed
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // Aggressive timeout
   
   try {
     const startTime = Date.now();
@@ -176,7 +176,7 @@ export async function fetchHourlyForYears(
   month: number,
   day: number,
   years: number[],
-  concurrency = 6 // Balanced for speed vs API stability
+  concurrency = 12 // Aggressive for maximum speed
 ): Promise<HourlyYearResult[]> {
   // Sort years to prioritize recent data
   const sortedYears = [...years].sort((a, b) => b - a); // Most recent first
@@ -195,7 +195,7 @@ export async function fetchHourlyForYears(
           console.log(`[OpenMeteo] Fetching hourly data for year: ${year} (attempt ${retryCount + 1}/${maxRetries + 1})`);
           
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000); // Reduced timeout for speed
+          const timeoutId = setTimeout(() => controller.abort(), 8000); // Aggressive timeout
           
           const startTime = Date.now();
           const response = await cachedFetch(url, { signal: controller.signal });
@@ -207,7 +207,7 @@ export async function fetchHourlyForYears(
           if (response.status === 429) {
             // Rate limited - only retry with backoff if we haven't hit max retries
             if (retryCount < maxRetries) {
-              const backoffTime = 1000 + (retryCount * 1000); // Shorter backoff: 1s, 2s
+              const backoffTime = 500 + (retryCount * 500); // Fast backoff: 500ms, 1s
               console.warn(`[OpenMeteo] Rate limited for year ${year}, retrying in ${backoffTime}ms`);
               await new Promise(resolve => setTimeout(resolve, backoffTime));
               retryCount++;
@@ -252,7 +252,7 @@ export async function fetchHourlyForYears(
           }
           
           if (retryCount < maxRetries) {
-            const backoffTime = 500 * Math.pow(2, retryCount); // Faster backoff: 500ms, 1s
+            const backoffTime = 200 * Math.pow(2, retryCount); // Very fast backoff: 200ms, 400ms
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             retryCount++;
           } else {
