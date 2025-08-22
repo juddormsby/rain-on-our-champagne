@@ -16,6 +16,8 @@ export function About() {
           </svg>
           <h1>About</h1>
         </div>
+
+        <p>Wherever you are, wherever you are going, know if it will rain on your champagne.</p>
         
         <p>This app is part of champagne running's commitment to champagne.</p>
         

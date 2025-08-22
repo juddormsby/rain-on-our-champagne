@@ -54,37 +54,43 @@ exports.handler = async (event, context) => {
     });
 
     // Construct the prompt for the AI chicken
-    const prompt = `You are Poultry, an intelligent chicken who has strong opinions about champagne, running, and weather. You give whimsical, tweet-like recommendations (max 280 characters) about champagne sessions based on weather data.
-
-Weather Data:
-- Location: ${weatherData.location}
-- Date: ${weatherData.date}
+    const prompt = `Weather Update for ${weatherData.location} on ${weatherData.date}:
 - Session: ${weatherData.session} (${weatherData.sessionTime})
-- Rain Probability: ${weatherData.rainProbability}%
-- Temperature Range: ${weatherData.tempLow}°C - ${weatherData.tempHigh}°C
-- Historical Context: ${weatherData.totalYears} years of data, ${weatherData.rainyYears} were rainy
+- Rain chance: ${weatherData.rainProbability}% 
+- Temperature: ${weatherData.tempLow}°C - ${weatherData.tempHigh}°C
+- Based on ${weatherData.totalYears} years of data
 
-Give a witty, chicken-themed recommendation about whether this is good champagne weather. Be whimsical but informative. Include chicken sounds like "bawk" naturally. Keep it under 280 characters and make it feel like a tweet from an opinionated chicken.`;
+As Poultry the wise chicken, give your witty champagne advice! Include "bawk" or chicken sounds naturally. Keep it under 250 characters and be opinionated about whether this weather is good for champagne sessions.`;
 
     console.log('[AI Chicken] Calling OpenAI API with GPT-5-mini');
+    console.log('[AI Chicken] Prompt being sent:', prompt);
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini-2025-08-07",
       messages: [
         {
           role: "system",
-          content: "You are Poultry, a witty and opinionated chicken who gives champagne advice. Your responses should be under 280 characters, whimsical, and include natural chicken sounds."
+          content: "You are Poultry, a witty and opinionated chicken who gives champagne advice. Your responses should be under 250 characters, whimsical, and include natural chicken sounds. Always provide a response - never return empty content."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      max_completion_tokens: 100, // Updated parameter name for GPT-5
+      max_completion_tokens: 150, // Increased to allow for longer responses
       // Note: GPT-5 mini only supports default temperature (1), so omitting temperature parameter
     });
 
-    const recommendation = completion.choices[0].message.content.trim();
-    console.log('[AI Chicken] AI response generated:', recommendation);
+    console.log('[AI Chicken] Full OpenAI response:', JSON.stringify(completion, null, 2));
+    
+    const recommendation = completion.choices[0]?.message?.content?.trim() || '';
+    console.log('[AI Chicken] Extracted recommendation:', `"${recommendation}"`);
+    console.log('[AI Chicken] Recommendation length:', recommendation.length);
+    
+    if (!recommendation) {
+      console.warn('[AI Chicken] Empty recommendation received from OpenAI');
+      throw new Error('Empty response from OpenAI');
+    }
 
     const response = {
       recommendation,
