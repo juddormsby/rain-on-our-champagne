@@ -14,6 +14,64 @@ export interface DailyRainResult {
   rainyYears: number;
 }
 
+export interface TemperaturePercentiles {
+  highP10: number | null;  // 10th percentile of daily highs (cooler end)
+  highP90: number | null;  // 90th percentile of daily highs (warmer end)
+  lowP10: number | null;   // 10th percentile of daily lows (cooler end)
+  lowP90: number | null;   // 90th percentile of daily lows (warmer end)
+  years: number[];
+}
+
+function calculatePercentile(values: number[], percentile: number): number | null {
+  if (values.length === 0) return null;
+  
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = (percentile / 100) * (sorted.length - 1);
+  
+  if (Number.isInteger(index)) {
+    return sorted[index];
+  }
+  
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  const weight = index - lower;
+  
+  return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+}
+
+export function calculateTemperaturePercentiles(
+  dailyData: { daily: DailyData },
+  targetDate: Date
+): TemperaturePercentiles {
+  const targetMMDD = formatMMDD(targetDate);
+  const times = dailyData.daily?.time || [];
+  const tempMax = dailyData.daily?.temperature_2m_max || [];
+  const tempMin = dailyData.daily?.temperature_2m_min || [];
+  
+  const highs: number[] = [];
+  const lows: number[] = [];
+  const years: number[] = [];
+  
+  for (let i = 0; i < times.length; i++) {
+    const date = new Date(times[i]);
+    const mmdd = formatMMDD(date);
+    
+    if (mmdd === targetMMDD && tempMax[i] != null && tempMin[i] != null) {
+      highs.push(tempMax[i]);
+      lows.push(tempMin[i]);
+      years.push(date.getFullYear());
+    }
+  }
+  
+  return {
+    highP10: calculatePercentile(highs, 10),
+    highP90: calculatePercentile(highs, 90),
+    lowP10: calculatePercentile(lows, 10),
+    lowP90: calculatePercentile(lows, 90),
+    years
+  };
+}
+
 export function calculateDailyRainProbability(
   dailyData: { daily: DailyData }, 
   targetDate: Date

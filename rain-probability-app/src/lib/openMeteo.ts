@@ -18,6 +18,9 @@ export interface DailyData {
   time: string[];
   precipitation_sum: number[];
   rain_sum: number[];
+  temperature_2m_max?: number[];
+  temperature_2m_min?: number[];
+  temperature_2m_mean?: number[];
 }
 
 export interface HourlyData {

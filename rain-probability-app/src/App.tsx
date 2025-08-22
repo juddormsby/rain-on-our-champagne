@@ -3,10 +3,10 @@ import { HourlyChart } from './components/HourlyChart';
 import { CircularProgress } from './components/CircularProgress';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
-import { calculateDailyRainProbability, calculateHourlyProbabilities, calculateWindowProbabilities } from './lib/stats';
+import { calculateDailyRainProbability, calculateHourlyProbabilities, calculateWindowProbabilities, calculateTemperaturePercentiles } from './lib/stats';
 import { geocodeCity, fetchHourlyForYears, fetchDaily } from './lib/openMeteo';
-import { WINDOWS } from './lib/config';
-import type { WindowProbabilities } from './lib/stats';
+import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
+import type { WindowProbabilities, TemperaturePercentiles } from './lib/stats';
 
 interface AppState {
   city: string;
@@ -19,6 +19,7 @@ interface AppState {
   hourlyData: (number | null)[];
   windowProbabilities: WindowProbabilities;
   dailyProbability: number;
+  temperaturePercentiles: TemperaturePercentiles | null;
 }
 
 const MONTHS = [
@@ -48,6 +49,7 @@ function App() {
     hourlyData: [],
     windowProbabilities: {},
     dailyProbability: 0,
+    temperaturePercentiles: null,
   });
 
   const getCurrentPeriodData = () => {
@@ -57,6 +59,11 @@ function App() {
   const getCurrentPeriodLabel = () => {
     const period = WINDOWS.find(w => w.key === state.selectedPeriod);
     return period ? period.label.toLowerCase() : 'session';
+  };
+
+  const formatTemperatureRange = (p10: number | null, p90: number | null): string => {
+    if (p10 === null || p90 === null) return '—';
+    return `${Math.round(p10)} – ${Math.round(p90)}`;
   };
 
   const fetchRainData = async () => {
@@ -79,6 +86,7 @@ function App() {
       // Get daily data for rain probability calculation
       const dailyData = await fetchDaily(location.latitude, location.longitude);
       const dailyStats = calculateDailyRainProbability(dailyData, targetDate);
+      const tempPercentiles = calculateTemperaturePercentiles(dailyData, targetDate);
 
       // Get hourly data for the specific date
       const hourlyData = await fetchHourlyForYears(
@@ -97,6 +105,7 @@ function App() {
         hourlyData: hourlyProbs,
         windowProbabilities: windowProbs,
         dailyProbability: (dailyStats.probability || 0) * 100,
+        temperaturePercentiles: tempPercentiles,
         isLoading: false
       }));
 
@@ -235,6 +244,19 @@ function App() {
                     label="Rain on the day"
                     size={200}
                   />
+                  {state.temperaturePercentiles && (
+                    <div style={{ 
+                      fontFamily: 'var(--font-body)', 
+                      fontSize: '14px', 
+                      color: 'var(--ink-muted)',
+                      marginTop: '16px',
+                      textAlign: 'center'
+                    }}>
+                      H: {formatTemperatureRange(state.temperaturePercentiles.highP10, state.temperaturePercentiles.highP90)}
+                      <br />
+                      L: {formatTemperatureRange(state.temperaturePercentiles.lowP10, state.temperaturePercentiles.lowP90)}
+                    </div>
+                  )}
                 </div>
                 <div className="card">
                   <CircularProgress
