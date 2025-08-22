@@ -6,7 +6,7 @@ import { ErrorMessage } from './components/ErrorMessage';
 import { calculateDailyRainProbability, calculateHourlyProbabilities, calculateWindowProbabilities } from './lib/stats';
 import { geocodeCity, fetchHourlyForYears, fetchDaily } from './lib/openMeteo';
 import { WINDOWS } from './lib/config';
-import type { WindowProbabilities, DailyRainResult } from './lib/stats';
+import type { WindowProbabilities } from './lib/stats';
 
 interface AppState {
   city: string;
