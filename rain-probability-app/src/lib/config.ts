@@ -7,5 +7,5 @@ export const WINDOWS = [
 
 export const RAIN_THRESHOLD_MM = 0.0;
 export const DEFAULT_START_YEAR = 1940;
-export const DEFAULT_CONCURRENCY = 10;
+export const DEFAULT_CONCURRENCY = 5;
 export const CACHE_TTL_DAYS = 30; 
