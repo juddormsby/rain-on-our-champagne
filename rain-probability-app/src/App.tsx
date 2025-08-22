@@ -4,6 +4,7 @@ import { HourlyChart } from './components/HourlyChart';
 import { CircularProgress } from './components/CircularProgress';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
+import { AIChicken } from './components/AIChicken';
 import { calculateDailyRainProbability, calculateHourlyProbabilities, calculateWindowProbabilities, calculateTemperaturePercentiles, calculateSessionTemperaturePercentiles } from './lib/stats';
 import { geocodeCity, fetchHourlyForYears, fetchDaily } from './lib/openMeteo';
 import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
@@ -70,6 +71,30 @@ function App() {
   const getCurrentPeriodLabel = () => {
     const period = WINDOWS.find(w => w.key === state.selectedPeriod);
     return period ? period.label.toLowerCase() : 'session';
+  };
+
+  const getAIChickenData = () => {
+    if (!state.hasData || !state.temperaturePercentiles || !state.sessionTemperaturePercentiles) {
+      return null;
+    }
+
+    const sessionTempData = state.sessionTemperaturePercentiles[state.selectedPeriod];
+    const currentPeriod = getCurrentPeriodData();
+    const period = WINDOWS.find(w => w.key === state.selectedPeriod);
+    const totalYears = state.temperaturePercentiles.years.length;
+    const rainProbability = currentPeriod ? (currentPeriod.probability || 0) * 100 : 0;
+
+    return {
+      location: `${state.city}, ${state.country}`,
+      date: `${state.selectedMonth}/${state.selectedDay}`,
+      session: period?.label || 'session',
+      sessionTime: `${period?.start || ''}:00-${period?.end || ''}:00`,
+      rainProbability: Math.round(rainProbability),
+      tempLow: sessionTempData?.lowP10 ? Math.round(sessionTempData.lowP10) : null,
+      tempHigh: sessionTempData?.highP90 ? Math.round(sessionTempData.highP90) : null,
+      totalYears: totalYears,
+      rainyYears: Math.round((rainProbability / 100) * totalYears),
+    };
   };
 
   const formatTemperatureRange = (p10: number | null, p90: number | null): string => {
@@ -569,6 +594,12 @@ function App() {
                 hasData={state.hasData}
               />
               </div>
+
+              {/* AI Chicken */}
+              <AIChicken 
+                weatherData={getAIChickenData()}
+                isVisible={state.hasData && !state.isLoading}
+              />
 
               {/* Footnote */}
               <div className="footnote">

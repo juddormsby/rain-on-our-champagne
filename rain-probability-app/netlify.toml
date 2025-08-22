@@ -1,9 +1,11 @@
 [build]
-  publish = "dist"
+  base = "rain-probability-app"
   command = "npm run build"
+  publish = "rain-probability-app/dist"
+  functions = "rain-probability-app/netlify/functions"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
 
 [[redirects]]
   from = "/*"
