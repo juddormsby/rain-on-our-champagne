@@ -80,7 +80,7 @@ Give a witty, chicken-themed recommendation about whether this is good champagne
         }
       ],
       max_completion_tokens: 100, // Updated parameter name for GPT-5
-      temperature: 0.9, // Higher temperature for more creative/whimsical responses
+      // Note: GPT-5 mini only supports default temperature (1), so omitting temperature parameter
     });
 
     const recommendation = completion.choices[0].message.content.trim();
