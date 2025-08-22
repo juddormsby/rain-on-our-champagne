@@ -59,6 +59,7 @@ h1, h2, h3 {
 }
 
 .card {
+  position: relative;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 16px;

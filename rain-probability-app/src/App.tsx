@@ -65,7 +65,7 @@ function App() {
 
   const formatTemperatureRange = (p10: number | null, p90: number | null): string => {
     if (p10 === null || p90 === null) return '—';
-    return `${Math.round(p10)} – ${Math.round(p90)}`;
+    return `${Math.round(p10)}°C – ${Math.round(p90)}°C`;
   };
 
   const fetchRainData = async () => {
@@ -250,11 +250,15 @@ function App() {
                   />
                   {state.temperaturePercentiles && (
                     <div style={{ 
+                      position: 'absolute',
+                      top: '50%',
+                      left: 'calc(50% + 120px)',
+                      transform: 'translateY(-50%)',
                       fontFamily: 'var(--font-body)', 
                       fontSize: '14px', 
                       color: 'var(--ink-muted)',
-                      marginTop: '16px',
-                      textAlign: 'center'
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap'
                     }}>
                       H: {formatTemperatureRange(state.temperaturePercentiles.highP10, state.temperaturePercentiles.highP90)}
                       <br />
@@ -270,11 +274,15 @@ function App() {
                   />
                   {state.sessionTemperaturePercentiles && state.sessionTemperaturePercentiles[state.selectedPeriod] && (
                     <div style={{ 
+                      position: 'absolute',
+                      top: '50%',
+                      left: 'calc(50% + 120px)',
+                      transform: 'translateY(-50%)',
                       fontFamily: 'var(--font-body)', 
                       fontSize: '14px', 
                       color: 'var(--ink-muted)',
-                      marginTop: '16px',
-                      textAlign: 'center'
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap'
                     }}>
                       H: {formatTemperatureRange(
                         state.sessionTemperaturePercentiles[state.selectedPeriod].highP10, 
