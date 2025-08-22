@@ -176,7 +176,7 @@ export async function fetchHourlyForYears(
   month: number,
   day: number,
   years: number[],
-  concurrency = 8 // Increased back to reasonable level for speed
+  concurrency = 6 // Balanced for speed vs API stability
 ): Promise<HourlyYearResult[]> {
   // Sort years to prioritize recent data
   const sortedYears = [...years].sort((a, b) => b - a); // Most recent first

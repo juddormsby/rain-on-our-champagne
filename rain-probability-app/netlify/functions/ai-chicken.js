@@ -79,7 +79,7 @@ Give a witty, chicken-themed recommendation about whether this is good champagne
           content: prompt
         }
       ],
-      max_tokens: 100,
+      max_completion_tokens: 100, // Updated parameter name for GPT-5
       temperature: 0.9, // Higher temperature for more creative/whimsical responses
     });
 
