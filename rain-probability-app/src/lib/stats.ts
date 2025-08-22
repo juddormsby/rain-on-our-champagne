@@ -72,6 +72,79 @@ export function calculateTemperaturePercentiles(
   };
 }
 
+export interface SessionTemperaturePercentiles {
+  [sessionKey: string]: {
+    highP10: number | null;
+    highP90: number | null;
+    lowP10: number | null;
+    lowP90: number | null;
+    years: number[];
+  };
+}
+
+export function calculateSessionTemperaturePercentiles(
+  hourlyData: HourlyYearResult[]
+): SessionTemperaturePercentiles {
+  const result: SessionTemperaturePercentiles = {};
+  
+  // Initialize result for each window/session
+  WINDOWS.forEach(window => {
+    result[window.key] = {
+      highP10: null,
+      highP90: null,
+      lowP10: null,
+      lowP90: null,
+      years: []
+    };
+  });
+  
+  // For each session, collect highs and lows across all years
+  WINDOWS.forEach(window => {
+    const sessionHighs: number[] = [];
+    const sessionLows: number[] = [];
+    const sessionYears: number[] = [];
+    
+    hourlyData.forEach(yearData => {
+      if (!yearData.hours) return;
+      
+      // Find temperature values for this session's hours
+      const sessionTemps: number[] = [];
+      
+      yearData.hours.forEach(hour => {
+        if (!hour.time || hour.temp === null) return;
+        
+        const hourOfDay = new Date(hour.time).getHours();
+        
+        // Check if this hour is within the session window
+        if (hourOfDay >= window.start && hourOfDay < window.end) {
+          sessionTemps.push(hour.temp);
+        }
+      });
+      
+      // Calculate high and low for this session in this year
+      if (sessionTemps.length > 0) {
+        const sessionHigh = Math.max(...sessionTemps);
+        const sessionLow = Math.min(...sessionTemps);
+        
+        sessionHighs.push(sessionHigh);
+        sessionLows.push(sessionLow);
+        sessionYears.push(yearData.year);
+      }
+    });
+    
+    // Calculate percentiles for this session
+    result[window.key] = {
+      highP10: calculatePercentile(sessionHighs, 10),
+      highP90: calculatePercentile(sessionHighs, 90),
+      lowP10: calculatePercentile(sessionLows, 10),
+      lowP90: calculatePercentile(sessionLows, 90),
+      years: sessionYears
+    };
+  });
+  
+  return result;
+}
+
 export function calculateDailyRainProbability(
   dailyData: { daily: DailyData }, 
   targetDate: Date

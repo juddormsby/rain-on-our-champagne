@@ -27,6 +27,9 @@ export interface HourlyData {
   time: string[];
   rain: number[];
   precipitation: number[];
+  temperature_2m?: number[];
+  apparent_temperature?: number[];
+  dew_point_2m?: number[];
 }
 
 export interface HourlyYearResult {
@@ -35,6 +38,9 @@ export interface HourlyYearResult {
     time: string;
     rain: number | null;
     precip: number | null;
+    temp: number | null;
+    apparentTemp: number | null;
+    dewPoint: number | null;
   }> | null;
 }
 
@@ -172,6 +178,9 @@ export async function fetchHourlyForYears(
           time,
           rain: hourly.rain?.[i] ?? null,
           precip: hourly.precipitation?.[i] ?? null,
+          temp: hourly.temperature_2m?.[i] ?? null,
+          apparentTemp: hourly.apparent_temperature?.[i] ?? null,
+          dewPoint: hourly.dew_point_2m?.[i] ?? null,
         }));
         
         return { year, hours };

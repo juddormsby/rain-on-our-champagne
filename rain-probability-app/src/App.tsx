@@ -3,10 +3,10 @@ import { HourlyChart } from './components/HourlyChart';
 import { CircularProgress } from './components/CircularProgress';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
-import { calculateDailyRainProbability, calculateHourlyProbabilities, calculateWindowProbabilities, calculateTemperaturePercentiles } from './lib/stats';
+import { calculateDailyRainProbability, calculateHourlyProbabilities, calculateWindowProbabilities, calculateTemperaturePercentiles, calculateSessionTemperaturePercentiles } from './lib/stats';
 import { geocodeCity, fetchHourlyForYears, fetchDaily } from './lib/openMeteo';
 import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
-import type { WindowProbabilities, TemperaturePercentiles } from './lib/stats';
+import type { WindowProbabilities, TemperaturePercentiles, SessionTemperaturePercentiles } from './lib/stats';
 
 interface AppState {
   city: string;
@@ -20,6 +20,7 @@ interface AppState {
   windowProbabilities: WindowProbabilities;
   dailyProbability: number;
   temperaturePercentiles: TemperaturePercentiles | null;
+  sessionTemperaturePercentiles: SessionTemperaturePercentiles | null;
 }
 
 const MONTHS = [
@@ -50,6 +51,7 @@ function App() {
     windowProbabilities: {},
     dailyProbability: 0,
     temperaturePercentiles: null,
+    sessionTemperaturePercentiles: null,
   });
 
   const getCurrentPeriodData = () => {
@@ -99,6 +101,7 @@ function App() {
 
       const hourlyProbs = calculateHourlyProbabilities(hourlyData);
       const windowProbs = calculateWindowProbabilities(hourlyData);
+      const sessionTempPercentiles = calculateSessionTemperaturePercentiles(hourlyData);
 
       setState(prev => ({
         ...prev,
@@ -106,6 +109,7 @@ function App() {
         windowProbabilities: windowProbs,
         dailyProbability: (dailyStats.probability || 0) * 100,
         temperaturePercentiles: tempPercentiles,
+        sessionTemperaturePercentiles: sessionTempPercentiles,
         isLoading: false
       }));
 
@@ -264,6 +268,25 @@ function App() {
                     label={`Rain during ${getCurrentPeriodLabel()} session`}
                     size={200}
                   />
+                  {state.sessionTemperaturePercentiles && state.sessionTemperaturePercentiles[state.selectedPeriod] && (
+                    <div style={{ 
+                      fontFamily: 'var(--font-body)', 
+                      fontSize: '14px', 
+                      color: 'var(--ink-muted)',
+                      marginTop: '16px',
+                      textAlign: 'center'
+                    }}>
+                      H: {formatTemperatureRange(
+                        state.sessionTemperaturePercentiles[state.selectedPeriod].highP10, 
+                        state.sessionTemperaturePercentiles[state.selectedPeriod].highP90
+                      )}
+                      <br />
+                      L: {formatTemperatureRange(
+                        state.sessionTemperaturePercentiles[state.selectedPeriod].lowP10, 
+                        state.sessionTemperaturePercentiles[state.selectedPeriod].lowP90
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
