@@ -618,11 +618,21 @@ function App() {
               {/* Chart */}
               <div className="chart-container">
                 <h3 className="chart-title">Hourly chance of rain</h3>
-                <HourlyChart 
-                hourlyProbabilities={state.hourlyProbabilities} 
-                isLoading={state.isLoadingHourly}
-                hasData={state.hasHourlyData}
-              />
+                {(() => {
+                  console.log('[App] About to render HourlyChart with:', {
+                    hourlyProbabilitiesLength: state.hourlyProbabilities?.length,
+                    isLoadingHourly: state.isLoadingHourly,
+                    hasHourlyData: state.hasHourlyData,
+                    sampleProbs: state.hourlyProbabilities?.slice(0, 3)
+                  });
+                  return (
+                                    <HourlyChart 
+                  hourlyProbabilities={state.hourlyProbabilities} 
+                  isLoading={state.isLoadingHourly}
+                  hasData={state.hasHourlyData}
+                />
+                  );
+                })()}
               </div>
 
               {/* AI Chicken */}
