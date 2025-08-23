@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HourlyChart } from './components/HourlyChart';
+
 import { CircularProgress } from './components/CircularProgress';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
 import { AIChicken } from './components/AIChicken';
-import { calculateDailyRainProbability, calculateHourlyProbabilities, calculateWindowProbabilities, calculateTemperaturePercentiles, calculateSessionTemperaturePercentiles } from './lib/stats';
-import { geocodeCity, fetchHourlyForYears, fetchDaily } from './lib/openMeteo';
+import { calculateDailyRainProbability, calculateWindowProbabilities, calculateTemperaturePercentiles } from './lib/stats';
+import { geocodeCity, fetchDaily } from './lib/openMeteo';
 import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
 import type { WindowProbabilities, TemperaturePercentiles, SessionTemperaturePercentiles } from './lib/stats';
 import type { GeocodingResult } from './lib/openMeteo';
@@ -19,18 +19,15 @@ interface AppState {
   selectedSession: string;
   geoResults: GeocodingResult[];
   isLoading: boolean;
-  isLoadingHourly: boolean; // Separate loading state for hourly data
   error: string | null;
   showCoordinateInput: boolean;
   latitude: string;
   longitude: string;
   rainProbability: number;
   sessionProbability: number;
-  hourlyProbabilities: (number | null)[];
   windowProbabilities: WindowProbabilities;
   hasData: boolean;
   hasDailyData: boolean; // New flag for partial data display
-  hasHourlyData: boolean; // New flag for hourly data
   selectedLocation: string;
   temperaturePercentiles: TemperaturePercentiles | null;
   sessionTemperaturePercentiles: SessionTemperaturePercentiles | null;
@@ -63,12 +60,9 @@ function App() {
     selectedSession: 'afternoon',
     geoResults: [],
     isLoading: false,
-    isLoadingHourly: false,
     hasData: false,
     hasDailyData: false,
-    hasHourlyData: false,
     error: null,
-    hourlyProbabilities: [],
     windowProbabilities: {},
     rainProbability: 0,
     sessionProbability: 0,
@@ -195,47 +189,25 @@ function App() {
         rainProbability: dailyStats.probability || 0,
         temperaturePercentiles: tempPercentiles,
         selectedLocation: `${state.city}, ${state.country}`,
-        hasDailyData: true,
-        isLoadingHourly: true
+        hasDailyData: true
       }));
 
-      // Get hourly data for the specific date (now async in background)
-      console.log(`[RainApp] Fetching hourly data for ${dailyStats.years.length} years...`);
-      const hourlyData = await fetchHourlyForYears(
-        latitude,
-        longitude,
-        targetDate.getMonth() + 1,
-        targetDate.getDate(),
-        dailyStats.years
-      );
-
-      // Validate hourly data
-      const validHourlyYears = hourlyData.filter(year => year.hours !== null).length;
-      console.log(`[RainApp] Hourly data received for ${validHourlyYears}/${hourlyData.length} years`);
-      
-      if (validHourlyYears === 0) {
-        console.warn('[RainApp] No valid hourly data received, using daily data only');
-      }
-
-      const hourlyProbs = calculateHourlyProbabilities(hourlyData);
-      const windowProbs = calculateWindowProbabilities(hourlyData);
-      const sessionTempPercentiles = calculateSessionTemperaturePercentiles(hourlyData);
+      // Calculate session data using only daily data
+      const windowProbs = calculateWindowProbabilities([]);
+      const currentPeriod = windowProbs[state.selectedSession];
 
       console.log('[RainApp] All calculations completed successfully');
 
       setState(prev => ({
         ...prev,
-        hourlyProbabilities: hourlyProbs,
         windowProbabilities: windowProbs,
         rainProbability: (dailyStats.probability || 0) * 100,
         sessionProbability: (currentPeriod ? (currentPeriod.probability || 0) * 100 : 0),
         temperaturePercentiles: tempPercentiles,
-        sessionTemperaturePercentiles: sessionTempPercentiles,
+        sessionTemperaturePercentiles: null, // No hourly data available
         isLoading: false,
-        isLoadingHourly: false,
         hasData: true,
         hasDailyData: true,
-        hasHourlyData: true,
         selectedLocation: `${state.city}, ${state.country}`,
       }));
 
@@ -253,8 +225,7 @@ function App() {
         setState(prev => ({
           ...prev,
           error: `${isRateLimited ? 'API rate limit reached' : 'Request timed out'}, retrying in ${Math.ceil(delayMs/1000)} seconds...`,
-          isLoading: true,
-          isLoadingHourly: false
+          isLoading: true
         }));
         
         setTimeout(() => {
@@ -280,13 +251,10 @@ function App() {
       setState(prev => ({
         ...prev,
         error: userError,
-        isLoading: false,
-        isLoadingHourly: false
+        isLoading: false
       }));
     }
   };
-
-  const currentPeriod = getCurrentPeriodData();
 
   return (
     <div className="container" style={{ paddingTop: '32px', paddingBottom: '32px' }}>
@@ -536,8 +504,8 @@ function App() {
                     percentage={state.sessionProbability}
                     label={`Rain during ${getCurrentPeriodLabel()} session`}
                     size={200}
-                    isLoading={state.isLoadingHourly}
-                    hasData={state.hasHourlyData}
+                    isLoading={state.isLoading}
+                    hasData={state.hasData}
                   />
                   {state.sessionTemperaturePercentiles && state.sessionTemperaturePercentiles[state.selectedSession] && (
                     <div style={{ 
@@ -615,25 +583,7 @@ function App() {
                 })}
               </div>
 
-              {/* Chart */}
-              <div className="chart-container">
-                <h3 className="chart-title">Hourly chance of rain</h3>
-                {(() => {
-                  console.log('[App] About to render HourlyChart with:', {
-                    hourlyProbabilitiesLength: state.hourlyProbabilities?.length,
-                    isLoadingHourly: state.isLoadingHourly,
-                    hasHourlyData: state.hasHourlyData,
-                    sampleProbs: state.hourlyProbabilities?.slice(0, 3)
-                  });
-                  return (
-                                    <HourlyChart 
-                  hourlyProbabilities={state.hourlyProbabilities} 
-                  isLoading={state.isLoadingHourly}
-                  hasData={state.hasHourlyData}
-                />
-                  );
-                })()}
-              </div>
+
 
               {/* AI Chicken */}
               <AIChicken 
