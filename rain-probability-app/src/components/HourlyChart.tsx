@@ -1,5 +1,5 @@
+ 
 
-import { useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -15,37 +15,9 @@ interface HourlyChartProps {
 }
 
 export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = true }: HourlyChartProps) {
-  console.log('[HourlyChart] Component rendered with props:', {
-    hourlyProbabilitiesLength: hourlyProbabilities?.length,
-    hourlyProbabilities: hourlyProbabilities,
-    isLoading,
-    hasData,
-    firstFewProbs: hourlyProbabilities?.slice(0, 5)
-  });
-
-  useEffect(() => {
-    console.log('[HourlyChart] Component mounted/updated');
-    console.log('[HourlyChart] Recharts components available:', {
-      BarChart: !!BarChart,
-      Bar: !!Bar,
-      XAxis: !!XAxis,
-      YAxis: !!YAxis,
-      ResponsiveContainer: !!ResponsiveContainer
-    });
-    
-    // Test if we can create a simple chart element
-    try {
-      const testElement = document.createElement('div');
-      testElement.innerHTML = 'Chart container test';
-      console.log('[HourlyChart] DOM manipulation works:', !!testElement);
-    } catch (error) {
-      console.error('[HourlyChart] DOM error:', error);
-    }
-  }, []);
 
   // Generate placeholder data for loading state
   const generatePlaceholderData = () => {
-    console.log('[HourlyChart] Generating placeholder data');
     return Array.from({ length: 24 }, (_, hour) => ({
       hour: String(hour).padStart(2, '0'),
       probability: isLoading ? Math.random() * 20 + 10 : 0, // Random small values for loading
@@ -62,26 +34,16 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
       };
     }) : generatePlaceholderData();
 
-  console.log('[HourlyChart] Chart data prepared:', {
-    dataLength: data?.length,
-    sampleData: data?.slice(0, 3),
-    condition: { hasData, isLoading },
-    // Show the actual percentage values being rendered
-    allProbabilities: data?.map(d => d.probability),
-    maxProbability: Math.max(...(data?.map(d => d.probability) || [0])),
-    minProbability: Math.min(...(data?.map(d => d.probability) || [0]))
-  });
 
-  // Common container style for debugging
+
+  // Clean container style
   const containerStyle = {
-    border: '2px solid #F59E0B',
-    backgroundColor: '#FEF3C7',
-    borderRadius: '8px',
-    padding: '8px'
+    backgroundColor: 'var(--paper)',
+    borderRadius: '16px',
+    padding: '24px'
   };
 
   if (isLoading) {
-    console.log('[HourlyChart] Rendering loading state');
     return (
       <div className="h-64 w-full relative" style={containerStyle}>
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-10">
@@ -98,7 +60,6 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
             </div>
           </div>
         </div>
-        <div style={{ fontSize: '12px', color: '#666' }}>LOADING CHART CONTAINER</div>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={data} 
@@ -130,11 +91,9 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
   }
 
   if (!hasData) {
-    console.log('[HourlyChart] Rendering no data state');
     return (
       <div className="h-64 w-full flex items-center justify-center" style={containerStyle}>
         <div className="text-center">
-          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>NO DATA CHART CONTAINER</div>
           <div style={{ 
             fontFamily: 'var(--font-body)', 
             fontSize: '16px', 
@@ -155,15 +114,10 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
     );
   }
 
-  console.log('[HourlyChart] Rendering main chart with data:', data?.length, 'items');
-
   try {
     return (
       <div className="h-64 w-full" style={containerStyle}>
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          MAIN CHART CONTAINER - Data: {data?.length} items | Max: {Math.max(...(data?.map(d => d.probability) || [0]))}% | Min: {Math.min(...(data?.map(d => d.probability) || [0]))}%
-        </div>
-        <ResponsiveContainer width="100%" height="calc(100% - 20px)">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={data} 
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
@@ -184,9 +138,9 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
             />
             <Bar 
               dataKey="probability" 
-              fill="#F59E0B"
+              fill="var(--accent-orange)"
               radius={[2, 2, 0, 0]}
-              minPointSize={2}
+              minPointSize={3}
             />
           </BarChart>
         </ResponsiveContainer>
@@ -197,7 +151,6 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
     return (
       <div className="h-64 w-full flex items-center justify-center" style={containerStyle}>
         <div className="text-center">
-          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>ERROR CHART CONTAINER</div>
           <div style={{ 
             fontFamily: 'var(--font-body)', 
             fontSize: '16px', 
