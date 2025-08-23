@@ -473,61 +473,63 @@ function App() {
             <>
               {/* Gauges */}
               <div className="gauges-grid">
-                <div className="card">
-                  <CircularProgress
-                    percentage={state.rainProbability}
-                    label="Rain on the day"
-                    size={200}
-                    isLoading={false}
-                    hasData={state.hasDailyData}
-                  />
+                <div className="card gauge-card">
+                  <div className="gauge-section">
+                    <CircularProgress
+                      percentage={state.rainProbability}
+                      label="Rain on the day"
+                      size={200}
+                      isLoading={false}
+                      hasData={state.hasDailyData}
+                    />
+                  </div>
                   {state.temperaturePercentiles && (
-                    <div style={{ 
-                      position: 'absolute',
-                      top: '50%',
-                      left: 'calc(50% + 120px)',
-                      transform: 'translateY(-50%)',
-                      fontFamily: 'var(--font-body)', 
-                      fontSize: '14px', 
-                      color: 'var(--ink-muted)',
-                      textAlign: 'left',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      H: {formatTemperatureRange(state.temperaturePercentiles.highP10, state.temperaturePercentiles.highP90)}
-                      <br />
-                      L: {formatTemperatureRange(state.temperaturePercentiles.lowP10, state.temperaturePercentiles.lowP90)}
+                    <div className="temperature-section">
+                      <div className="temperature-row">
+                        <span className="temperature-label">H:</span>
+                        <span className="temperature-range">
+                          {formatTemperatureRange(state.temperaturePercentiles.highP10, state.temperaturePercentiles.highP90)}
+                        </span>
+                      </div>
+                      <div className="temperature-row">
+                        <span className="temperature-label">L:</span>
+                        <span className="temperature-range">
+                          {formatTemperatureRange(state.temperaturePercentiles.lowP10, state.temperaturePercentiles.lowP90)}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
-                <div className="card">
-                  <CircularProgress
-                    percentage={state.sessionProbability}
-                    label={`Rain during ${getCurrentPeriodLabel()} session`}
-                    size={200}
-                    isLoading={state.isLoading}
-                    hasData={state.hasData}
-                  />
+                <div className="card gauge-card">
+                  <div className="gauge-section">
+                    <CircularProgress
+                      percentage={state.sessionProbability}
+                      label={`Rain during ${getCurrentPeriodLabel()} session`}
+                      size={200}
+                      isLoading={state.isLoading}
+                      hasData={state.hasData}
+                    />
+                  </div>
                   {state.sessionTemperaturePercentiles && state.sessionTemperaturePercentiles[state.selectedSession] && (
-                    <div style={{ 
-                      position: 'absolute',
-                      top: '50%',
-                      left: 'calc(50% + 120px)',
-                      transform: 'translateY(-50%)',
-                      fontFamily: 'var(--font-body)', 
-                      fontSize: '14px', 
-                      color: 'var(--ink-muted)',
-                      textAlign: 'left',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      H: {formatTemperatureRange(
-                        state.sessionTemperaturePercentiles[state.selectedSession].highP10, 
-                        state.sessionTemperaturePercentiles[state.selectedSession].highP90
-                      )}
-                      <br />
-                      L: {formatTemperatureRange(
-                        state.sessionTemperaturePercentiles[state.selectedSession].lowP10, 
-                        state.sessionTemperaturePercentiles[state.selectedSession].lowP90
-                      )}
+                    <div className="temperature-section">
+                      <div className="temperature-row">
+                        <span className="temperature-label">H:</span>
+                        <span className="temperature-range">
+                          {formatTemperatureRange(
+                            state.sessionTemperaturePercentiles[state.selectedSession].highP10, 
+                            state.sessionTemperaturePercentiles[state.selectedSession].highP90
+                          )}
+                        </span>
+                      </div>
+                      <div className="temperature-row">
+                        <span className="temperature-label">L:</span>
+                        <span className="temperature-range">
+                          {formatTemperatureRange(
+                            state.sessionTemperaturePercentiles[state.selectedSession].lowP10, 
+                            state.sessionTemperaturePercentiles[state.selectedSession].lowP90
+                          )}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
