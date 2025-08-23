@@ -1,5 +1,13 @@
 import pLimit from 'p-limit';
-import { DEFAULT_START_YEAR } from './config';
+import { 
+  DEFAULT_START_YEAR, 
+  DEFAULT_CONCURRENCY,
+  DAILY_TIMEOUT_MS,
+  HOURLY_TIMEOUT_MS,
+  MAX_RETRIES,
+  RATE_LIMIT_BACKOFF_BASE_MS,
+  RATE_LIMIT_BACKOFF_MULTIPLIER
+} from './config';
 import { cachedFetch } from './cache';
 
 const BASE_URL = 'https://archive-api.open-meteo.com/v1/archive';
@@ -122,7 +130,7 @@ export async function fetchDaily(
   console.log(`[OpenMeteo] Daily data URL: ${url.toString()}`);
   
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // Aggressive timeout
+  const timeoutId = setTimeout(() => controller.abort(), DAILY_TIMEOUT_MS);
   
   try {
     const startTime = Date.now();
@@ -176,7 +184,7 @@ export async function fetchHourlyForYears(
   month: number,
   day: number,
   years: number[],
-  concurrency = 12 // Aggressive for maximum speed
+  concurrency = DEFAULT_CONCURRENCY
 ): Promise<HourlyYearResult[]> {
   // Sort years to prioritize recent data
   const sortedYears = [...years].sort((a, b) => b - a); // Most recent first
@@ -187,7 +195,7 @@ export async function fetchHourlyForYears(
   const tasks = sortedYears.map((year) => 
     limit(async (): Promise<HourlyYearResult> => {
       let retryCount = 0;
-      const maxRetries = 2; // Reduced retries for speed
+      const maxRetries = MAX_RETRIES;
       
       while (retryCount <= maxRetries) {
         try {
@@ -195,7 +203,7 @@ export async function fetchHourlyForYears(
           console.log(`[OpenMeteo] Fetching hourly data for year: ${year} (attempt ${retryCount + 1}/${maxRetries + 1})`);
           
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 8000); // Aggressive timeout
+          const timeoutId = setTimeout(() => controller.abort(), HOURLY_TIMEOUT_MS);
           
           const startTime = Date.now();
           const response = await cachedFetch(url, { signal: controller.signal });
@@ -207,7 +215,7 @@ export async function fetchHourlyForYears(
           if (response.status === 429) {
             // Rate limited - only retry with backoff if we haven't hit max retries
             if (retryCount < maxRetries) {
-              const backoffTime = 500 + (retryCount * 500); // Fast backoff: 500ms, 1s
+              const backoffTime = RATE_LIMIT_BACKOFF_BASE_MS + (retryCount * RATE_LIMIT_BACKOFF_MULTIPLIER);
               console.warn(`[OpenMeteo] Rate limited for year ${year}, retrying in ${backoffTime}ms`);
               await new Promise(resolve => setTimeout(resolve, backoffTime));
               retryCount++;
@@ -252,7 +260,7 @@ export async function fetchHourlyForYears(
           }
           
           if (retryCount < maxRetries) {
-            const backoffTime = 200 * Math.pow(2, retryCount); // Very fast backoff: 200ms, 400ms
+            const backoffTime = RATE_LIMIT_BACKOFF_BASE_MS * Math.pow(2, retryCount);
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             retryCount++;
           } else {
