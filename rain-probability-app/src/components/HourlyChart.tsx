@@ -53,15 +53,23 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
   };
 
   const data = hasData && !isLoading ? 
-    hourlyProbabilities.map((prob, hour) => ({
-      hour: String(hour).padStart(2, '0'),
-      probability: prob ? Math.round(prob * 100) : 0,
-    })) : generatePlaceholderData();
+    hourlyProbabilities.map((prob, hour) => {
+      // Convert decimal probability to percentage (0-100 range)
+      const percentage = prob ? Math.round(prob * 100) : 0;
+      return {
+        hour: String(hour).padStart(2, '0'),
+        probability: percentage,
+      };
+    }) : generatePlaceholderData();
 
   console.log('[HourlyChart] Chart data prepared:', {
     dataLength: data?.length,
     sampleData: data?.slice(0, 3),
-    condition: { hasData, isLoading }
+    condition: { hasData, isLoading },
+    // Show the actual percentage values being rendered
+    allProbabilities: data?.map(d => d.probability),
+    maxProbability: Math.max(...(data?.map(d => d.probability) || [0])),
+    minProbability: Math.min(...(data?.map(d => d.probability) || [0]))
   });
 
   // Common container style for debugging
@@ -153,7 +161,7 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
     return (
       <div className="h-64 w-full" style={containerStyle}>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          MAIN CHART CONTAINER - Data: {data?.length} items
+          MAIN CHART CONTAINER - Data: {data?.length} items | Max: {Math.max(...(data?.map(d => d.probability) || [0]))}% | Min: {Math.min(...(data?.map(d => d.probability) || [0]))}%
         </div>
         <ResponsiveContainer width="100%" height="calc(100% - 20px)">
           <BarChart 
@@ -171,12 +179,14 @@ export function HourlyChart({ hourlyProbabilities, isLoading = false, hasData = 
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#6B7280' }}
-              domain={[0, 100]}
+              domain={[0, 'dataMax + 5']}
+              tickFormatter={(value) => `${value}%`}
             />
             <Bar 
               dataKey="probability" 
               fill="#F59E0B"
               radius={[2, 2, 0, 0]}
+              minPointSize={2}
             />
           </BarChart>
         </ResponsiveContainer>
