@@ -39,38 +39,28 @@ exports.handler = async (event, context) => {
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    // Construct the prompt
-    const prompt = `Weather: ${weatherData.rainProbability}% rain chance, ${weatherData.tempLow}-${weatherData.tempHigh}°C in ${weatherData.location} for ${weatherData.session}.
+    // Construct the input prompt - simpler format for new API
+    const input = `You are Poultry, a sassy chicken who tweets about champagne and weather. Write a short, witty tweet (under 200 characters) about this weather: ${weatherData.rainProbability}% rain chance, ${weatherData.tempLow}-${weatherData.tempHigh}°C in ${weatherData.location} for ${weatherData.session}. Include "bawk" naturally and be opinionated about whether this is good champagne weather.`;
 
-Write a short, witty tweet from Poultry the chicken about whether this is good champagne weather. Include "bawk" and be opinionated. Under 200 characters.`;
-
-    console.log("[AI Chicken] Calling OpenAI Responses API with GPT-5 mini");
+    console.log("[AI Chicken] Calling OpenAI Responses API with gpt-5-mini");
+    console.log("[AI Chicken] Input:", input);
 
     const response = await openai.responses.create({
-      model: "gpt-5-mini-2025-08-07",
-      input: [
-        {
-          role: "system",
-          content:
-            "You are Poultry, a sassy chicken who tweets about champagne and weather. Always respond with a short, witty tweet under 200 characters. Include 'bawk' naturally. Never return empty responses.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_output_tokens: 150,
+      model: "gpt-5-mini",
+      input: input,
     });
 
     console.log("[AI Chicken] Full OpenAI response:", JSON.stringify(response, null, 2));
 
-    // Responses API puts text in response.output[0].content
-    const recommendation =
-      response.output?.[0]?.content?.[0]?.text?.trim() || "";
+    // New API format - response.output_text contains the direct text response
+    const recommendation = response.output_text?.trim() || "";
 
     if (!recommendation) {
+      console.error("[AI Chicken] Empty response - response.output_text:", response.output_text);
       throw new Error("Empty response from OpenAI");
     }
+
+    console.log("[AI Chicken] Successfully got recommendation:", recommendation);
 
     return {
       statusCode: 200,
@@ -78,12 +68,13 @@ Write a short, witty tweet from Poultry the chicken about whether this is good c
       body: JSON.stringify({
         recommendation,
         timestamp: new Date().toISOString(),
-        model: "gpt-5-mini-2025-08-07",
+        model: "gpt-5-mini",
         weatherContext: weatherData,
       }),
     };
   } catch (error) {
     console.error("[AI Chicken] Error occurred:", error);
+    console.error("[AI Chicken] Error stack:", error.stack);
 
     const fallbackResponses = [
       "Bawk bawk! Something went wrong in my coop 🐔 Try again later for proper champagne wisdom!",
