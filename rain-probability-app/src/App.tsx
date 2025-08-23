@@ -5,8 +5,8 @@ import { CircularProgress } from './components/CircularProgress';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
 import { AIChicken } from './components/AIChicken';
-import { calculateDailyRainProbability, calculateWindowProbabilities, calculateTemperaturePercentiles } from './lib/stats';
-import { geocodeCity, fetchDaily } from './lib/openMeteo';
+import { calculateDailyRainProbability, calculateWindowProbabilities, calculateTemperaturePercentiles, calculateSessionTemperaturePercentiles } from './lib/stats';
+import { geocodeCity, fetchDaily, fetchHourlyForYears } from './lib/openMeteo';
 import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
 import type { WindowProbabilities, TemperaturePercentiles, SessionTemperaturePercentiles } from './lib/stats';
 import type { GeocodingResult } from './lib/openMeteo';
@@ -192,8 +192,26 @@ function App() {
         hasDailyData: true
       }));
 
-      // Calculate session data using only daily data
-      const windowProbs = calculateWindowProbabilities([]);
+      // Get hourly data for session calculations
+      console.log(`[RainApp] Fetching hourly data for ${dailyStats.years.length} years...`);
+      const hourlyData = await fetchHourlyForYears(
+        latitude,
+        longitude,
+        targetDate.getMonth() + 1,
+        targetDate.getDate(),
+        dailyStats.years
+      );
+
+      // Validate hourly data
+      const validHourlyYears = hourlyData.filter(year => year.hours !== null).length;
+      console.log(`[RainApp] Hourly data received for ${validHourlyYears}/${hourlyData.length} years`);
+      
+      if (validHourlyYears === 0) {
+        console.warn('[RainApp] No valid hourly data received, using daily data only');
+      }
+
+      const windowProbs = calculateWindowProbabilities(hourlyData);
+      const sessionTempPercentiles = calculateSessionTemperaturePercentiles(hourlyData);
       const currentPeriod = windowProbs[state.selectedSession];
 
       console.log('[RainApp] All calculations completed successfully');
@@ -204,7 +222,7 @@ function App() {
         rainProbability: (dailyStats.probability || 0) * 100,
         sessionProbability: (currentPeriod ? (currentPeriod.probability || 0) * 100 : 0),
         temperaturePercentiles: tempPercentiles,
-        sessionTemperaturePercentiles: null, // No hourly data available
+        sessionTemperaturePercentiles: sessionTempPercentiles,
         isLoading: false,
         hasData: true,
         hasDailyData: true,
