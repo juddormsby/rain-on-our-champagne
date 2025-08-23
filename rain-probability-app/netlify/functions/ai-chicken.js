@@ -53,14 +53,10 @@ exports.handler = async (event, context) => {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // Construct the prompt for the AI chicken
-    const prompt = `Weather Update for ${weatherData.location} on ${weatherData.date}:
-- Session: ${weatherData.session} (${weatherData.sessionTime})
-- Rain chance: ${weatherData.rainProbability}% 
-- Temperature: ${weatherData.tempLow}°C - ${weatherData.tempHigh}°C
-- Based on ${weatherData.totalYears} years of data
+    // Construct the prompt for the AI chicken - simplified for GPT-5 mini
+    const prompt = `Weather: ${weatherData.rainProbability}% rain chance, ${weatherData.tempLow}-${weatherData.tempHigh}°C in ${weatherData.location} for ${weatherData.session}.
 
-As Poultry the wise chicken, give your witty champagne advice! Include "bawk" or chicken sounds naturally. Keep it under 250 characters and be opinionated about whether this weather is good for champagne sessions.`;
+Write a short, witty tweet from Poultry the chicken about whether this is good champagne weather. Include "bawk" and be opinionated. Under 200 characters.`;
 
     console.log('[AI Chicken] Calling OpenAI API with GPT-5-mini');
     console.log('[AI Chicken] Prompt being sent:', prompt);
@@ -70,7 +66,7 @@ As Poultry the wise chicken, give your witty champagne advice! Include "bawk" or
       messages: [
         {
           role: "system",
-          content: "You are Poultry, a witty and opinionated chicken who gives champagne advice. Your responses should be under 250 characters, whimsical, and include natural chicken sounds. Always provide a response - never return empty content."
+          content: "You are Poultry, a sassy chicken who tweets about champagne and weather. Always respond with a short, witty tweet under 200 characters. Include 'bawk' naturally. Never return empty responses."
         },
         {
           role: "user",
@@ -88,7 +84,41 @@ As Poultry the wise chicken, give your witty champagne advice! Include "bawk" or
     console.log('[AI Chicken] Recommendation length:', recommendation.length);
     
     if (!recommendation) {
-      console.warn('[AI Chicken] Empty recommendation received from OpenAI');
+      console.warn('[AI Chicken] Empty recommendation received from OpenAI, trying fallback prompt');
+      
+      // Try a simpler fallback prompt
+      const fallbackCompletion = await openai.chat.completions.create({
+        model: "gpt-5-mini-2025-08-07",
+        messages: [
+          {
+            role: "user",
+            content: `Poultry the chicken says about ${weatherData.rainProbability}% rain chance: "Bawk!`
+          }
+        ],
+        max_completion_tokens: 100,
+      });
+      
+      const fallbackRec = fallbackCompletion.choices[0]?.message?.content?.trim();
+      if (fallbackRec) {
+        console.log('[AI Chicken] Fallback prompt worked:', fallbackRec);
+        const finalRecommendation = `Bawk! ${fallbackRec}`;
+        
+        const response = {
+          recommendation: finalRecommendation,
+          timestamp: new Date().toISOString(),
+          model: "gpt-5-mini-2025-08-07",
+          weatherContext: weatherData,
+          usedFallback: true
+        };
+        
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify(response),
+        };
+      }
+      
+      console.error('[AI Chicken] Both primary and fallback prompts failed');
       throw new Error('Empty response from OpenAI');
     }
 
