@@ -17,7 +17,7 @@ export function CircularProgress({ percentage, label, size = 200, isLoading = fa
   const displayValue = isLoading ? '...' : hasData ? `${Math.round(percentage)}%` : '—';
 
   return (
-    <div className="gauge-container" style={{ width: size, height: size * 0.6 + 80 }}>
+    <div className="gauge-container" style={{ width: size, height: size * 0.6 + 60 }}>
       <div style={{ position: 'relative', width: size, height: size * 0.6 }}>
         <svg
           className="gauge-svg"

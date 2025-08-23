@@ -136,7 +136,7 @@ h1, h2, h3 {
 .gauge-card {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 32px;
   padding: 24px;
   min-height: 200px;
@@ -156,7 +156,8 @@ h1, h2, h3 {
   flex-direction: column;
   gap: 8px;
   min-width: 100px;
-  margin-left: 16px;
+  align-self: flex-start;
+  margin-top: 20px;
 }
 
 .temperature-row {
@@ -252,7 +253,7 @@ h1, h2, h3 {
 
 .gauge-text {
   position: absolute;
-  top: 50%;
+  top: 55%;
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
