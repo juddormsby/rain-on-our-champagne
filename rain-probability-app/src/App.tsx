@@ -9,22 +9,29 @@ import { calculateDailyRainProbability, calculateHourlyProbabilities, calculateW
 import { geocodeCity, fetchHourlyForYears, fetchDaily } from './lib/openMeteo';
 import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
 import type { WindowProbabilities, TemperaturePercentiles, SessionTemperaturePercentiles } from './lib/stats';
+import type { GeocodingResult } from './lib/openMeteo';
 
 interface AppState {
   city: string;
   country: string;
-  latitude: string;
-  longitude: string;
-  showCoordinateInput: boolean;
   selectedDay: string;
   selectedMonth: string;
-  selectedPeriod: string;
+  selectedSession: string;
+  geoResults: GeocodingResult[];
   isLoading: boolean;
-  hasData: boolean;
+  isLoadingHourly: boolean; // Separate loading state for hourly data
   error: string | null;
-  hourlyData: (number | null)[];
+  showCoordinateInput: boolean;
+  latitude: string;
+  longitude: string;
+  rainProbability: number;
+  sessionProbability: number;
+  hourlyProbabilities: (number | null)[];
   windowProbabilities: WindowProbabilities;
-  dailyProbability: number;
+  hasData: boolean;
+  hasDailyData: boolean; // New flag for partial data display
+  hasHourlyData: boolean; // New flag for hourly data
+  selectedLocation: string;
   temperaturePercentiles: TemperaturePercentiles | null;
   sessionTemperaturePercentiles: SessionTemperaturePercentiles | null;
 }
@@ -53,23 +60,29 @@ function App() {
     showCoordinateInput: false,
     selectedDay: '19',
     selectedMonth: '09',
-    selectedPeriod: 'afternoon',
+    selectedSession: 'afternoon',
+    geoResults: [],
     isLoading: false,
+    isLoadingHourly: false,
     hasData: false,
+    hasDailyData: false,
+    hasHourlyData: false,
     error: null,
-    hourlyData: [],
+    hourlyProbabilities: [],
     windowProbabilities: {},
-    dailyProbability: 0,
+    rainProbability: 0,
+    sessionProbability: 0,
+    selectedLocation: '',
     temperaturePercentiles: null,
     sessionTemperaturePercentiles: null,
   });
 
   const getCurrentPeriodData = () => {
-    return state.windowProbabilities[state.selectedPeriod];
+    return state.windowProbabilities[state.selectedSession];
   };
 
   const getCurrentPeriodLabel = () => {
-    const period = WINDOWS.find(w => w.key === state.selectedPeriod);
+    const period = WINDOWS.find(w => w.key === state.selectedSession);
     return period ? period.label.toLowerCase() : 'session';
   };
 
@@ -78,9 +91,9 @@ function App() {
       return null;
     }
 
-    const sessionTempData = state.sessionTemperaturePercentiles[state.selectedPeriod];
+    const sessionTempData = state.sessionTemperaturePercentiles[state.selectedSession];
     const currentPeriod = getCurrentPeriodData();
-    const period = WINDOWS.find(w => w.key === state.selectedPeriod);
+    const period = WINDOWS.find(w => w.key === state.selectedSession);
     const totalYears = state.temperaturePercentiles.years.length;
     const rainProbability = currentPeriod ? (currentPeriod.probability || 0) * 100 : 0;
 
@@ -176,7 +189,17 @@ function App() {
         throw new Error('No historical data available for this date and location');
       }
 
-      // Get hourly data for the specific date
+      // Update state with daily data immediately for early painting
+      setState(prev => ({
+        ...prev,
+        rainProbability: dailyStats.probability || 0,
+        temperaturePercentiles: tempPercentiles,
+        selectedLocation: `${state.city}, ${state.country}`,
+        hasDailyData: true,
+        isLoadingHourly: true
+      }));
+
+      // Get hourly data for the specific date (now async in background)
       console.log(`[RainApp] Fetching hourly data for ${dailyStats.years.length} years...`);
       const hourlyData = await fetchHourlyForYears(
         latitude,
@@ -202,13 +225,18 @@ function App() {
 
       setState(prev => ({
         ...prev,
-        hourlyData: hourlyProbs,
+        hourlyProbabilities: hourlyProbs,
         windowProbabilities: windowProbs,
-        dailyProbability: (dailyStats.probability || 0) * 100,
+        rainProbability: (dailyStats.probability || 0) * 100,
+        sessionProbability: (currentPeriod ? (currentPeriod.probability || 0) * 100 : 0),
         temperaturePercentiles: tempPercentiles,
         sessionTemperaturePercentiles: sessionTempPercentiles,
         isLoading: false,
-        hasData: true
+        isLoadingHourly: false,
+        hasData: true,
+        hasDailyData: true,
+        hasHourlyData: true,
+        selectedLocation: `${state.city}, ${state.country}`,
       }));
 
     } catch (error) {
@@ -225,7 +253,8 @@ function App() {
         setState(prev => ({
           ...prev,
           error: `${isRateLimited ? 'API rate limit reached' : 'Request timed out'}, retrying in ${Math.ceil(delayMs/1000)} seconds...`,
-          isLoading: true
+          isLoading: true,
+          isLoadingHourly: false
         }));
         
         setTimeout(() => {
@@ -251,7 +280,8 @@ function App() {
       setState(prev => ({
         ...prev,
         error: userError,
-        isLoading: false
+        isLoading: false,
+        isLoadingHourly: false
       }));
     }
   };
@@ -362,12 +392,12 @@ function App() {
           </div>
         </div>
         
-        <div>
+      <div>
           <label htmlFor="session" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Session</label>
           <select
             id="session"
-            value={state.selectedPeriod}
-            onChange={(e) => setState(prev => ({ ...prev, selectedPeriod: e.target.value }))}
+            value={state.selectedSession}
+            onChange={(e) => setState(prev => ({ ...prev, selectedSession: e.target.value }))}
             className="select-field"
             style={{ width: '100%' }}
           >
@@ -470,18 +500,18 @@ function App() {
         </div>
       ) : (
         <>
-          {/* Only show results if we have data */}
-          {state.hourlyData.length > 0 && (
+          {/* Show results as soon as we have daily data */}
+          {state.hasDailyData && (
             <>
               {/* Gauges */}
               <div className="gauges-grid">
                 <div className="card">
                   <CircularProgress
-                    percentage={state.dailyProbability}
+                    percentage={state.rainProbability}
                     label="Rain on the day"
                     size={200}
-                    isLoading={state.isLoading}
-                    hasData={state.hasData}
+                    isLoading={false}
+                    hasData={state.hasDailyData}
                   />
                   {state.temperaturePercentiles && (
                     <div style={{ 
@@ -503,13 +533,13 @@ function App() {
                 </div>
                 <div className="card">
                   <CircularProgress
-                    percentage={currentPeriod ? (currentPeriod.probability || 0) * 100 : 0}
+                    percentage={state.sessionProbability}
                     label={`Rain during ${getCurrentPeriodLabel()} session`}
                     size={200}
-                    isLoading={state.isLoading}
-                    hasData={state.hasData}
+                    isLoading={state.isLoadingHourly}
+                    hasData={state.hasHourlyData}
                   />
-                  {state.sessionTemperaturePercentiles && state.sessionTemperaturePercentiles[state.selectedPeriod] && (
+                  {state.sessionTemperaturePercentiles && state.sessionTemperaturePercentiles[state.selectedSession] && (
                     <div style={{ 
                       position: 'absolute',
                       top: '50%',
@@ -522,13 +552,13 @@ function App() {
                       whiteSpace: 'nowrap'
                     }}>
                       H: {formatTemperatureRange(
-                        state.sessionTemperaturePercentiles[state.selectedPeriod].highP10, 
-                        state.sessionTemperaturePercentiles[state.selectedPeriod].highP90
+                        state.sessionTemperaturePercentiles[state.selectedSession].highP10, 
+                        state.sessionTemperaturePercentiles[state.selectedSession].highP90
                       )}
                       <br />
                       L: {formatTemperatureRange(
-                        state.sessionTemperaturePercentiles[state.selectedPeriod].lowP10, 
-                        state.sessionTemperaturePercentiles[state.selectedPeriod].lowP90
+                        state.sessionTemperaturePercentiles[state.selectedSession].lowP10, 
+                        state.sessionTemperaturePercentiles[state.selectedSession].lowP90
                       )}
                     </div>
                   )}
@@ -540,8 +570,8 @@ function App() {
                 {WINDOWS.map(window => (
                   <button
                     key={window.key}
-                    onClick={() => setState(prev => ({ ...prev, selectedPeriod: window.key }))}
-                    className={`session-chip ${state.selectedPeriod === window.key ? 'active' : ''}`}
+                    onClick={() => setState(prev => ({ ...prev, selectedSession: window.key }))}
+                    className={`session-chip ${state.selectedSession === window.key ? 'active' : ''}`}
                   >
                     {window.label}
                   </button>
@@ -589,9 +619,9 @@ function App() {
               <div className="chart-container">
                 <h3 className="chart-title">Hourly chance of rain</h3>
                 <HourlyChart 
-                hourlyProbabilities={state.hourlyData} 
-                isLoading={state.isLoading}
-                hasData={state.hasData}
+                hourlyProbabilities={state.hourlyProbabilities} 
+                isLoading={state.isLoadingHourly}
+                hasData={state.hasHourlyData}
               />
               </div>
 

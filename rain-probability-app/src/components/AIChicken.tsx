@@ -166,7 +166,16 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
             fontFamily: 'var(--font-body)',
             fontSize: '14px'
           }}>
-            <div className="loading-spinner" style={{ margin: '0 auto 12px' }}></div>
+            <div style={{ 
+              fontSize: '24px', 
+              fontWeight: 'bold', 
+              color: 'var(--accent-amber)',
+              minWidth: '3ch',
+              textAlign: 'center',
+              margin: '0 auto 12px'
+            }}>
+              ...
+            </div>
             Poultry is sipping champagne and pondering the weather... 🍾
           </div>
         )}
