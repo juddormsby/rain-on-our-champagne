@@ -29,8 +29,7 @@ export interface DailyData {
   temperature_2m_max?: number[];
   temperature_2m_min?: number[];
   temperature_2m_mean?: number[];
-  weathercode?: number[];
-  cloud_cover?: number[];
+  weather_code?: number[];
 }
 
 export interface HourlyData {
@@ -128,7 +127,7 @@ export async function fetchDaily(
   url.searchParams.set('longitude', String(lon));
   url.searchParams.set('start_date', startDate);
   url.searchParams.set('end_date', endDate || new Date().toISOString().slice(0, 10));
-  url.searchParams.set('daily', 'precipitation_sum,rain_sum,temperature_2m_max,temperature_2m_min,temperature_2m_mean,weathercode,cloud_cover');
+  url.searchParams.set('daily', 'precipitation_sum,rain_sum,temperature_2m_max,temperature_2m_min,temperature_2m_mean,weather_code');
   url.searchParams.set('temperature_unit', 'celsius');
   url.searchParams.set('timezone', 'auto');
   

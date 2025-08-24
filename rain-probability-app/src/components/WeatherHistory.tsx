@@ -5,7 +5,7 @@ interface WeatherHistoryProps {
     time: string[];
     temperature_2m_max?: number[];
     temperature_2m_min?: number[];
-    weathercode?: number[];
+    weather_code?: number[];
   } | null;
   isLoading: boolean;
 }
@@ -38,7 +38,7 @@ export function WeatherHistory({ dailyData, isLoading }: WeatherHistoryProps) {
   const [yearlyWeather, setYearlyWeather] = useState<YearWeather[]>([]);
 
   useEffect(() => {
-    if (!dailyData || !dailyData.time || !dailyData.temperature_2m_max || !dailyData.temperature_2m_min || !dailyData.weathercode) {
+    if (!dailyData || !dailyData.time || !dailyData.temperature_2m_max || !dailyData.temperature_2m_min || !dailyData.weather_code) {
       return;
     }
 
@@ -52,8 +52,8 @@ export function WeatherHistory({ dailyData, isLoading }: WeatherHistoryProps) {
         // Find the data for this specific year and date
         const yearIndex = dailyData.time.findIndex(time => time.startsWith(`${year}-`));
         
-        if (yearIndex !== -1 && dailyData.weathercode && dailyData.temperature_2m_max && dailyData.temperature_2m_min) {
-          const weathercode = dailyData.weathercode[yearIndex];
+        if (yearIndex !== -1 && dailyData.weather_code && dailyData.temperature_2m_max && dailyData.temperature_2m_min) {
+          const weathercode = dailyData.weather_code[yearIndex];
           const high = dailyData.temperature_2m_max[yearIndex];
           const low = dailyData.temperature_2m_min[yearIndex];
           

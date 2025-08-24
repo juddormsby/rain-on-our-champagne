@@ -610,9 +610,9 @@ function App() {
                   time: state.temperaturePercentiles.years.map(year => `${year}-${state.selectedMonth}-${state.selectedDay}`),
                   temperature_2m_max: state.temperaturePercentiles.years.map(() => state.temperaturePercentiles?.highP90 || 0),
                   temperature_2m_min: state.temperaturePercentiles.years.map(() => state.temperaturePercentiles?.lowP10 || 0),
-                  weathercode: state.temperaturePercentiles.years.map(() => {
+                  weather_code: state.temperaturePercentiles.years.map(() => {
                     // For now, we'll need to get this from the daily data
-                    // This is a placeholder until we integrate the actual weathercode data
+                    // This is a placeholder until we integrate the actual weather_code data
                     return Math.floor(Math.random() * 100); // Random weather code for testing
                   })
                 } : null}
