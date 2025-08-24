@@ -29,6 +29,8 @@ export interface DailyData {
   temperature_2m_max?: number[];
   temperature_2m_min?: number[];
   temperature_2m_mean?: number[];
+  weathercode?: number[];
+  cloud_cover?: number[];
 }
 
 export interface HourlyData {
@@ -38,6 +40,8 @@ export interface HourlyData {
   temperature_2m?: number[];
   apparent_temperature?: number[];
   dew_point_2m?: number[];
+  weathercode?: number[];
+  cloud_cover?: number[];
 }
 
 export interface HourlyYearResult {
@@ -49,6 +53,8 @@ export interface HourlyYearResult {
     temp: number | null;
     apparentTemp: number | null;
     dewPoint: number | null;
+    weathercode: number | null;
+    cloudCover: number | null;
   }> | null;
 }
 
@@ -122,7 +128,7 @@ export async function fetchDaily(
   url.searchParams.set('longitude', String(lon));
   url.searchParams.set('start_date', startDate);
   url.searchParams.set('end_date', endDate || new Date().toISOString().slice(0, 10));
-  url.searchParams.set('daily', 'precipitation_sum,rain_sum,temperature_2m_max,temperature_2m_min,temperature_2m_mean');
+  url.searchParams.set('daily', 'precipitation_sum,rain_sum,temperature_2m_max,temperature_2m_min,temperature_2m_mean,weathercode,cloud_cover');
   url.searchParams.set('temperature_unit', 'celsius');
   url.searchParams.set('timezone', 'auto');
   
@@ -171,7 +177,7 @@ function createHourlyUrl(lat: number, lon: number, year: number, month: number, 
   const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   url.searchParams.set('start_date', dateStr);
   url.searchParams.set('end_date', dateStr);
-  url.searchParams.set('hourly', 'rain,precipitation,temperature_2m,apparent_temperature,dew_point_2m');
+  url.searchParams.set('hourly', 'rain,precipitation,temperature_2m,apparent_temperature,dew_point_2m,weathercode,cloud_cover');
   url.searchParams.set('temperature_unit', 'celsius');
   url.searchParams.set('timezone', 'auto');
   
@@ -248,6 +254,8 @@ export async function fetchHourlyForYears(
             temp: hourly.temperature_2m?.[i] ?? null,
             apparentTemp: hourly.apparent_temperature?.[i] ?? null,
             dewPoint: hourly.dew_point_2m?.[i] ?? null,
+            weathercode: hourly.weathercode?.[i] ?? null,
+            cloudCover: hourly.cloud_cover?.[i] ?? null,
           }));
           
           return { year, hours };
