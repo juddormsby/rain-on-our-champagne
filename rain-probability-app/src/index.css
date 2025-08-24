@@ -529,20 +529,20 @@ h1, h2, h3 {
 
 /* Weather History Component */
 .weather-history-container {
-  margin-top: 24px;
-  padding: 20px;
-  background: var(--paper);
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--bg-cream);
   border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(46,42,40,.08);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(46,42,40,.04);
 }
 
 .weather-history-title {
   font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ink);
-  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
   text-align: center;
 }
 
@@ -557,10 +557,10 @@ h1, h2, h3 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 8px;
+  border-radius: 8px;
   transition: all 0.2s ease;
 }
 
@@ -574,13 +574,13 @@ h1, h2, h3 {
 }
 
 .weather-icon {
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1;
 }
 
 .weather-temps {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--ink);
   text-align: center;

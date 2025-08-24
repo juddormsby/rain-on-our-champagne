@@ -519,6 +519,12 @@ function App() {
                           {formatTemperatureRange(state.temperaturePercentiles.lowP10, state.temperaturePercentiles.lowP90)}
                         </span>
                       </div>
+                      
+                      {/* Weather History - Historical patterns for this date */}
+                      <WeatherHistory 
+                        dailyData={state.dailyData}
+                        isLoading={state.isLoading}
+                      />
                     </div>
                   )}
                 </div>
@@ -606,12 +612,6 @@ function App() {
                   );
                 })}
               </div>
-
-              {/* Weather History */}
-              <WeatherHistory 
-                dailyData={state.dailyData}
-                isLoading={state.isLoading}
-              />
 
               {/* AI Chicken */}
               <AIChicken 
