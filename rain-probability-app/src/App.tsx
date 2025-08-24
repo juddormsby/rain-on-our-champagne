@@ -522,6 +522,7 @@ function App() {
                       
                       {/* Weather History - Historical patterns for this date */}
                       <WeatherHistory 
+                        key={`weather-history-${state.selectedMonth}-${state.selectedDay}`}
                         dailyData={state.dailyData}
                         isLoading={state.isLoading}
                       />

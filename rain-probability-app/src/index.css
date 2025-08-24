@@ -531,6 +531,7 @@ h1, h2, h3 {
 .weather-history-container {
   margin-top: 16px;
   padding: 16px;
+  padding-left: 0;
   background: var(--bg-cream);
   border: 1px solid var(--line);
   border-radius: 12px;

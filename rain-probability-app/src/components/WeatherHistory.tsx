@@ -50,25 +50,38 @@ export function WeatherHistory({ dailyData, isLoading }: WeatherHistoryProps) {
     
     const weatherData: YearWeather[] = [];
     
-          years.forEach(year => {
-        // Find the data for this specific year and date
-        const yearIndex = dailyData.daily.time.findIndex(time => time.startsWith(`${year}-`));
+    console.log('[WeatherHistory] Processing years:', years);
+    console.log('[WeatherHistory] Daily data available:', {
+      timeLength: dailyData.daily.time?.length,
+      tempMaxLength: dailyData.daily.temperature_2m_max?.length,
+      tempMinLength: dailyData.daily.temperature_2m_min?.length,
+      weatherCodeLength: dailyData.daily.weather_code?.length
+    });
+    
+    years.forEach(year => {
+      // Find the data for this specific year and date
+      const yearIndex = dailyData.daily.time.findIndex(time => time.startsWith(`${year}-`));
+      console.log(`[WeatherHistory] Year ${year}: index ${yearIndex}`);
+      
+      if (yearIndex !== -1 && dailyData.daily.weather_code && dailyData.daily.temperature_2m_max && dailyData.daily.temperature_2m_min) {
+        const weathercode = dailyData.daily.weather_code[yearIndex];
+        const high = dailyData.daily.temperature_2m_max[yearIndex];
+        const low = dailyData.daily.temperature_2m_min[yearIndex];
         
-        if (yearIndex !== -1 && dailyData.daily.weather_code && dailyData.daily.temperature_2m_max && dailyData.daily.temperature_2m_min) {
-          const weathercode = dailyData.daily.weather_code[yearIndex];
-          const high = dailyData.daily.temperature_2m_max[yearIndex];
-          const low = dailyData.daily.temperature_2m_min[yearIndex];
-          
-          if (weathercode !== undefined && high !== undefined && low !== undefined) {
-            weatherData.push({
-              year,
-              weathercode,
-              high: Math.round(high),
-              low: Math.round(low)
-            });
-          }
+        console.log(`[WeatherHistory] Year ${year}: weather=${weathercode}, high=${high}, low=${low}`);
+        
+        if (weathercode !== undefined && high !== undefined && low !== undefined) {
+          weatherData.push({
+            year,
+            weathercode,
+            high: Math.round(high),
+            low: Math.round(low)
+          });
         }
-      });
+      }
+    });
+    
+    console.log('[WeatherHistory] Final weather data:', weatherData);
 
     setYearlyWeather(weatherData);
   }, [dailyData]);
