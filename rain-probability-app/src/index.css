@@ -526,3 +526,82 @@ h1, h2, h3 {
   background: var(--accent-amber);
   text-decoration: none;
 }
+
+/* Weather History Component */
+.weather-history-container {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(46,42,40,.08);
+}
+
+.weather-history-title {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.weather-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.weather-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.weather-entry:hover {
+  background: var(--bg-cream);
+  transform: translateY(-2px);
+}
+
+.weather-entry.loading {
+  opacity: 0.6;
+}
+
+.weather-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.weather-temps {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Responsive design for weather history */
+@media (max-width: 768px) {
+  .weather-history-row {
+    gap: 8px;
+  }
+  
+  .weather-entry {
+    padding: 8px;
+  }
+  
+  .weather-icon {
+    font-size: 20px;
+  }
+  
+  .weather-temps {
+    font-size: 12px;
+  }
+}

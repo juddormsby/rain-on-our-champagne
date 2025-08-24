@@ -5,6 +5,7 @@ import { CircularProgress } from './components/CircularProgress';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
 import { AIChicken } from './components/AIChicken';
+import { WeatherHistory } from './components/WeatherHistory';
 import { calculateDailyRainProbability, calculateWindowProbabilities, calculateTemperaturePercentiles, calculateSessionTemperaturePercentiles } from './lib/stats';
 import { geocodeCity, fetchDaily, fetchHourlyForYears } from './lib/openMeteo';
 import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
@@ -603,7 +604,20 @@ function App() {
                 })}
               </div>
 
-
+              {/* Weather History */}
+              <WeatherHistory 
+                dailyData={state.temperaturePercentiles ? {
+                  time: state.temperaturePercentiles.years.map(year => `${year}-${state.selectedMonth}-${state.selectedDay}`),
+                  temperature_2m_max: state.temperaturePercentiles.years.map(() => state.temperaturePercentiles?.highP90 || 0),
+                  temperature_2m_min: state.temperaturePercentiles.years.map(() => state.temperaturePercentiles?.lowP10 || 0),
+                  weathercode: state.temperaturePercentiles.years.map(() => {
+                    // For now, we'll need to get this from the daily data
+                    // This is a placeholder until we integrate the actual weathercode data
+                    return Math.floor(Math.random() * 100); // Random weather code for testing
+                  })
+                } : null}
+                isLoading={state.isLoading}
+              />
 
               {/* AI Chicken */}
               <AIChicken 
