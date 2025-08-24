@@ -109,7 +109,7 @@ export function WeatherHistory({ dailyData, isLoading }: WeatherHistoryProps) {
   return (
     <div className="weather-history-container">
       <div className="weather-history-title">
-        Last 5 years: {yearlyWeather.map(w => weatherCodeToEmoji(w.weathercode)).join('  ')}
+        Last 5 years:
       </div>
       <div className="weather-history-row">
         {yearlyWeather.map((yearData) => (
