@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 
 interface WeatherHistoryProps {
   dailyData: {
-    time: string[];
-    temperature_2m_max?: number[];
-    temperature_2m_min?: number[];
-    weather_code?: number[];
+    daily: {
+      time: string[];
+      temperature_2m_max?: number[];
+      temperature_2m_min?: number[];
+      weather_code?: number[];
+    };
   } | null;
   isLoading: boolean;
 }
@@ -38,7 +40,7 @@ export function WeatherHistory({ dailyData, isLoading }: WeatherHistoryProps) {
   const [yearlyWeather, setYearlyWeather] = useState<YearWeather[]>([]);
 
   useEffect(() => {
-    if (!dailyData || !dailyData.time || !dailyData.temperature_2m_max || !dailyData.temperature_2m_min || !dailyData.weather_code) {
+    if (!dailyData || !dailyData.daily || !dailyData.daily.time || !dailyData.daily.temperature_2m_max || !dailyData.daily.temperature_2m_min || !dailyData.daily.weather_code) {
       return;
     }
 
@@ -50,12 +52,12 @@ export function WeatherHistory({ dailyData, isLoading }: WeatherHistoryProps) {
     
           years.forEach(year => {
         // Find the data for this specific year and date
-        const yearIndex = dailyData.time.findIndex(time => time.startsWith(`${year}-`));
+        const yearIndex = dailyData.daily.time.findIndex(time => time.startsWith(`${year}-`));
         
-        if (yearIndex !== -1 && dailyData.weather_code && dailyData.temperature_2m_max && dailyData.temperature_2m_min) {
-          const weathercode = dailyData.weather_code[yearIndex];
-          const high = dailyData.temperature_2m_max[yearIndex];
-          const low = dailyData.temperature_2m_min[yearIndex];
+        if (yearIndex !== -1 && dailyData.daily.weather_code && dailyData.daily.temperature_2m_max && dailyData.daily.temperature_2m_min) {
+          const weathercode = dailyData.daily.weather_code[yearIndex];
+          const high = dailyData.daily.temperature_2m_max[yearIndex];
+          const low = dailyData.daily.temperature_2m_min[yearIndex];
           
           if (weathercode !== undefined && high !== undefined && low !== undefined) {
             weatherData.push({

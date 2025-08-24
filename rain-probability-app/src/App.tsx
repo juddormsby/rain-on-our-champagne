@@ -10,7 +10,7 @@ import { calculateDailyRainProbability, calculateWindowProbabilities, calculateT
 import { geocodeCity, fetchDaily, fetchHourlyForYears } from './lib/openMeteo';
 import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
 import type { WindowProbabilities, TemperaturePercentiles, SessionTemperaturePercentiles } from './lib/stats';
-import type { GeocodingResult } from './lib/openMeteo';
+import type { GeocodingResult, DailyData } from './lib/openMeteo';
 
 interface AppState {
   city: string;
@@ -32,6 +32,7 @@ interface AppState {
   selectedLocation: string;
   temperaturePercentiles: TemperaturePercentiles | null;
   sessionTemperaturePercentiles: SessionTemperaturePercentiles | null;
+  dailyData: { daily: DailyData } | null;
 }
 
 const MONTHS = [
@@ -70,6 +71,7 @@ function App() {
     selectedLocation: '',
     temperaturePercentiles: null,
     sessionTemperaturePercentiles: null,
+    dailyData: null,
   });
 
   const getCurrentPeriodData = () => {
@@ -189,6 +191,7 @@ function App() {
         ...prev,
         rainProbability: dailyStats.probability || 0,
         temperaturePercentiles: tempPercentiles,
+        dailyData: dailyData,
         selectedLocation: `${state.city}, ${state.country}`,
         hasDailyData: true
       }));
@@ -606,16 +609,7 @@ function App() {
 
               {/* Weather History */}
               <WeatherHistory 
-                dailyData={state.temperaturePercentiles ? {
-                  time: state.temperaturePercentiles.years.map(year => `${year}-${state.selectedMonth}-${state.selectedDay}`),
-                  temperature_2m_max: state.temperaturePercentiles.years.map(() => state.temperaturePercentiles?.highP90 || 0),
-                  temperature_2m_min: state.temperaturePercentiles.years.map(() => state.temperaturePercentiles?.lowP10 || 0),
-                  weather_code: state.temperaturePercentiles.years.map(() => {
-                    // For now, we'll need to get this from the daily data
-                    // This is a placeholder until we integrate the actual weather_code data
-                    return Math.floor(Math.random() * 100); // Random weather code for testing
-                  })
-                } : null}
+                dailyData={state.dailyData}
                 isLoading={state.isLoading}
               />
 
