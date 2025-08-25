@@ -35,11 +35,20 @@ const weatherCodeToEmoji = (code: number): string => {
   if (code >= 61 && code <= 65) return '🌧️';   // Rain
   if (code >= 66 && code <= 67) return '🌨️';   // Freezing rain
   if (code >= 71 && code <= 75) return '🌨️';   // Snow
-  if (code >= 77 && code <= 77) return '🌨️';   // Snow grains
+  if (code === 77) return '🌨️';                // Snow grains
   if (code >= 80 && code <= 82) return '🌧️';   // Rain showers
   if (code >= 85 && code <= 86) return '🌨️';   // Snow showers
-  if (code >= 95 && code <= 95) return '⛈️';   // Thunderstorm
+  if (code === 95) return '⛈️';                // Thunderstorm
   if (code >= 96 && code <= 99) return '⛈️';   // Thunderstorm with hail
+  
+  // Handle missing ranges for completeness
+  if (code >= 4 && code <= 44) return '☁️';    // Various cloudy conditions
+  if (code >= 58 && code <= 60) return '🌧️';   // Light rain variations
+  if (code >= 68 && code <= 70) return '🌨️';   // Rain/snow mix
+  if (code >= 76 && code <= 76) return '🌨️';   // Snow variations
+  if (code >= 83 && code <= 84) return '🌧️';   // Heavy showers
+  if (code >= 87 && code <= 94) return '🌨️';   // Snow/hail showers
+  
   return '❓'; // Unknown code
 };
 
