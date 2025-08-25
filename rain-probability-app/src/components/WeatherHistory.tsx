@@ -51,9 +51,8 @@ export function WeatherHistory({ dailyData, isLoading, targetDate }: WeatherHist
       return;
     }
 
-    // Get the last 5 years of data
-    const currentYear = new Date().getFullYear();
-    const years = [currentYear - 4, currentYear - 3, currentYear - 2, currentYear - 1, currentYear];
+    // Get the last 5 years of data (2020-2024)
+    const years = [2020, 2021, 2022, 2023, 2024];
     
     const weatherData: YearWeather[] = [];
     
