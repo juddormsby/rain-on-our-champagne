@@ -520,12 +520,13 @@ function App() {
                         </span>
                       </div>
                       
-                      {/* Weather History - Historical patterns for this date */}
-                      <WeatherHistory 
-                        key={`weather-history-${state.selectedMonth}-${state.selectedDay}`}
-                        dailyData={state.dailyData}
-                        isLoading={state.isLoading}
-                      />
+                                             {/* Weather History - Historical patterns for this date */}
+                       <WeatherHistory 
+                         key={`weather-history-${state.selectedMonth}-${state.selectedDay}`}
+                         dailyData={state.dailyData}
+                         isLoading={state.isLoading}
+                         targetDate={new Date(2024, parseInt(state.selectedMonth) - 1, parseInt(state.selectedDay))}
+                       />
                     </div>
                   )}
                 </div>

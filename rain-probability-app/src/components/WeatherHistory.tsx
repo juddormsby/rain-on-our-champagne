@@ -10,6 +10,13 @@ interface WeatherHistoryProps {
     };
   } | null;
   isLoading: boolean;
+  targetDate: Date;
+}
+
+function formatMMDD(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${month}-${day}`;
 }
 
 interface YearWeather {
@@ -36,7 +43,7 @@ const weatherCodeToEmoji = (code: number): string => {
   return '❓'; // Unknown code
 };
 
-export function WeatherHistory({ dailyData, isLoading }: WeatherHistoryProps) {
+export function WeatherHistory({ dailyData, isLoading, targetDate }: WeatherHistoryProps) {
   const [yearlyWeather, setYearlyWeather] = useState<YearWeather[]>([]);
 
   useEffect(() => {
@@ -58,33 +65,40 @@ export function WeatherHistory({ dailyData, isLoading }: WeatherHistoryProps) {
       weatherCodeLength: dailyData.daily.weather_code?.length
     });
     
-    years.forEach(year => {
-      // Find the data for this specific year and date
-      const yearIndex = dailyData.daily.time.findIndex(time => time.startsWith(`${year}-`));
-      console.log(`[WeatherHistory] Year ${year}: index ${yearIndex}`);
+    // Find data for the specific target date across all years
+    const targetMMDD = formatMMDD(targetDate);
+    
+    for (let i = 0; i < dailyData.daily.time.length; i++) {
+      const date = new Date(dailyData.daily.time[i]);
+      const dateMMDD = formatMMDD(date);
       
-      if (yearIndex !== -1 && dailyData.daily.weather_code && dailyData.daily.temperature_2m_max && dailyData.daily.temperature_2m_min) {
-        const weathercode = dailyData.daily.weather_code[yearIndex];
-        const high = dailyData.daily.temperature_2m_max[yearIndex];
-        const low = dailyData.daily.temperature_2m_min[yearIndex];
+      if (dateMMDD === targetMMDD) {
+        const year = date.getFullYear();
         
-        console.log(`[WeatherHistory] Year ${year}: weather=${weathercode}, high=${high}, low=${low}`);
-        
-        if (weathercode !== undefined && high !== undefined && low !== undefined) {
-          weatherData.push({
-            year,
-            weathercode,
-            high: Math.round(high),
-            low: Math.round(low)
-          });
+        // Only include years from our target list
+        if (years.includes(year) && dailyData.daily.weather_code && dailyData.daily.temperature_2m_max && dailyData.daily.temperature_2m_min) {
+          const weathercode = dailyData.daily.weather_code[i];
+          const high = dailyData.daily.temperature_2m_max[i];
+          const low = dailyData.daily.temperature_2m_min[i];
+          
+          console.log(`[WeatherHistory] Year ${year}: weather=${weathercode}, high=${high}, low=${low}`);
+          
+          if (weathercode !== undefined && high !== undefined && low !== undefined) {
+            weatherData.push({
+              year,
+              weathercode,
+              high: Math.round(high),
+              low: Math.round(low)
+            });
+          }
         }
       }
-    });
+    }
     
     console.log('[WeatherHistory] Final weather data:', weatherData);
 
     setYearlyWeather(weatherData);
-  }, [dailyData]);
+  }, [dailyData, targetDate]);
 
   if (isLoading) {
     return (
