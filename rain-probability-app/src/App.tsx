@@ -6,11 +6,12 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
 import { AIChicken } from './components/AIChicken';
 import { WeatherHistory } from './components/WeatherHistory';
+import { SessionWeatherHistory } from './components/SessionWeatherHistory';
 import { calculateDailyRainProbability, calculateWindowProbabilities, calculateTemperaturePercentiles, calculateSessionTemperaturePercentiles } from './lib/stats';
 import { geocodeCity, fetchDaily, fetchHourlyForYears } from './lib/openMeteo';
 import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
 import type { WindowProbabilities, TemperaturePercentiles, SessionTemperaturePercentiles } from './lib/stats';
-import type { GeocodingResult, DailyData } from './lib/openMeteo';
+import type { GeocodingResult, DailyData, HourlyYearResult } from './lib/openMeteo';
 
 interface AppState {
   city: string;
@@ -33,6 +34,7 @@ interface AppState {
   temperaturePercentiles: TemperaturePercentiles | null;
   sessionTemperaturePercentiles: SessionTemperaturePercentiles | null;
   dailyData: { daily: DailyData } | null;
+  hourlyData: HourlyYearResult[];
 }
 
 const MONTHS = [
@@ -72,6 +74,7 @@ function App() {
     temperaturePercentiles: null,
     sessionTemperaturePercentiles: null,
     dailyData: null,
+    hourlyData: [],
   });
 
   const getCurrentPeriodData = () => {
@@ -227,6 +230,7 @@ function App() {
         sessionProbability: (currentPeriod ? (currentPeriod.probability || 0) * 100 : 0),
         temperaturePercentiles: tempPercentiles,
         sessionTemperaturePercentiles: sessionTempPercentiles,
+        hourlyData: hourlyData,
         isLoading: false,
         hasData: true,
         hasDailyData: true,
@@ -560,6 +564,14 @@ function App() {
                           )}
                         </span>
                       </div>
+                      
+                      {/* Session Weather History - Historical patterns for this session */}
+                      <SessionWeatherHistory 
+                        key={`session-weather-history-${state.selectedMonth}-${state.selectedDay}-${state.selectedSession}`}
+                        hourlyData={state.hourlyData}
+                        isLoading={state.isLoading}
+                        selectedSession={state.selectedSession}
+                      />
                     </div>
                   )}
                 </div>
