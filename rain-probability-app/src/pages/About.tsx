@@ -17,7 +17,7 @@ export function About() {
           <h1>About</h1>
         </div>
 
-        <p>Wherever you are, wherever you are going, know if it will rain on your champagne.</p>
+        <p>Wherever you are, wherever you are going, whenever it may be - know if it will rain on your champagne.</p>
         
         <p>This app is part of champagne running's commitment to champagne.</p>
         
@@ -44,7 +44,7 @@ export function About() {
         
         <p>Probabilities reflect these long-term(-ish) averages. For example, in London it rained on 35 out of 47 times (60%) during evening champagne sessions in the post 1940 September 19th period since 1940.</p>
         
-        <p>Temperature falls in the range shown historically 80% of the time. i.e. the high for London on 19th September has fallen between ZZZ (10th percentile) and YYY (90th percentile) since 1940.</p>
+        <p>Temperature falls in the range shown historically 80% of the time. i.e. the high for London on 19th September has fallen between 15 (10th percentile) and 21 (90th percentile) since 1940.</p>
         
         <p>Data is ERA5-reanalysis via open-meteo API (thanks to both).</p>
         
