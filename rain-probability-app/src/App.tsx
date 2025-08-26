@@ -530,18 +530,6 @@ function App() {
                       hasData={state.hasDailyData}
                     />
                   </div>
-                  {state.sunTimes && (
-                    <div className="sun-times-section">
-                      <div className="sun-time-row">
-                        <span className="sun-time-icon">🌅</span>
-                        <span className="sun-time-value">{formatTime(state.sunTimes.sunrise)}</span>
-                      </div>
-                      <div className="sun-time-row">
-                        <span className="sun-time-icon">🌇</span>
-                        <span className="sun-time-value">{formatTime(state.sunTimes.sunset)}</span>
-                      </div>
-                    </div>
-                  )}
                   {state.temperaturePercentiles && (
                     <div className="temperature-section">
                       <div className="temperature-row">
@@ -564,6 +552,22 @@ function App() {
                          isLoading={state.isLoading}
                          targetDate={new Date(2024, parseInt(state.selectedMonth) - 1, parseInt(state.selectedDay))}
                        />
+                       
+                       {/* Sun Times - underneath weather history */}
+                       {state.sunTimes && (
+                         <div className="sun-times-section">
+                           <div className="sun-times-row">
+                             <div className="sun-time-item">
+                               <span className="sun-time-icon">🌅</span>
+                               <span className="sun-time-value">{formatTime(state.sunTimes.sunrise)}</span>
+                             </div>
+                             <div className="sun-time-item">
+                               <span className="sun-time-icon">🌇</span>
+                               <span className="sun-time-value">{formatTime(state.sunTimes.sunset)}</span>
+                             </div>
+                           </div>
+                         </div>
+                       )}
                     </div>
                   )}
                 </div>
