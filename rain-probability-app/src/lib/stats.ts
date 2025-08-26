@@ -14,6 +14,46 @@ export interface DailyRainResult {
   rainyYears: number;
 }
 
+export interface SunTimesResult {
+  sunrise: string | null;
+  sunset: string | null;
+}
+
+export function calculateSunTimes(
+  dailyData: { daily: DailyData },
+  targetDate: Date
+): SunTimesResult {
+  const targetMMDD = formatMMDD(targetDate);
+  const times = dailyData.daily?.time || [];
+  const sunrise = dailyData.daily?.sunrise || [];
+  const sunset = dailyData.daily?.sunset || [];
+  
+  // Find the most recent year's data for this date
+  let latestYear = 0;
+  let sunriseTime: string | null = null;
+  let sunsetTime: string | null = null;
+  
+  for (let i = 0; i < times.length; i++) {
+    const date = new Date(times[i]);
+    const dateMMDD = formatMMDD(date);
+    
+    if (dateMMDD === targetMMDD) {
+      const year = date.getFullYear();
+      
+      if (year > latestYear && sunrise[i] && sunset[i]) {
+        latestYear = year;
+        sunriseTime = sunrise[i];
+        sunsetTime = sunset[i];
+      }
+    }
+  }
+  
+  return {
+    sunrise: sunriseTime,
+    sunset: sunsetTime
+  };
+}
+
 export interface TemperaturePercentiles {
   highP10: number | null;  // 10th percentile of daily highs (cooler end)
   highP90: number | null;  // 90th percentile of daily highs (warmer end)

@@ -7,10 +7,10 @@ import { ErrorMessage } from './components/ErrorMessage';
 import { AIChicken } from './components/AIChicken';
 import { WeatherHistory } from './components/WeatherHistory';
 import { SessionWeatherHistory } from './components/SessionWeatherHistory';
-import { calculateDailyRainProbability, calculateWindowProbabilities, calculateTemperaturePercentiles, calculateSessionTemperaturePercentiles } from './lib/stats';
+import { calculateDailyRainProbability, calculateWindowProbabilities, calculateTemperaturePercentiles, calculateSessionTemperaturePercentiles, calculateSunTimes } from './lib/stats';
 import { geocodeCity, fetchDaily, fetchHourlyForYears } from './lib/openMeteo';
 import { WINDOWS, RAIN_THRESHOLD_MM } from './lib/config';
-import type { WindowProbabilities, TemperaturePercentiles, SessionTemperaturePercentiles } from './lib/stats';
+import type { WindowProbabilities, TemperaturePercentiles, SessionTemperaturePercentiles, SunTimesResult } from './lib/stats';
 import type { GeocodingResult, DailyData, HourlyYearResult } from './lib/openMeteo';
 
 interface AppState {
@@ -35,6 +35,7 @@ interface AppState {
   sessionTemperaturePercentiles: SessionTemperaturePercentiles | null;
   dailyData: { daily: DailyData } | null;
   hourlyData: HourlyYearResult[];
+  sunTimes: SunTimesResult | null;
 }
 
 const MONTHS = [
@@ -75,6 +76,7 @@ function App() {
     sessionTemperaturePercentiles: null,
     dailyData: null,
     hourlyData: [],
+    sunTimes: null,
   });
 
   const getCurrentPeriodData = () => {
@@ -113,6 +115,20 @@ function App() {
   const formatTemperatureRange = (p10: number | null, p90: number | null): string => {
     if (p10 === null || p90 === null) return '—';
     return `${Math.round(p10)}°C – ${Math.round(p90)}°C`;
+  };
+
+  const formatTime = (timeString: string | null): string => {
+    if (!timeString) return '—';
+    try {
+      const date = new Date(timeString);
+      return date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: false 
+      });
+    } catch {
+      return '—';
+    }
   };
 
   const fetchRainData = async (retryCount = 0) => {
@@ -183,6 +199,9 @@ function App() {
       
       const tempPercentiles = calculateTemperaturePercentiles(dailyData, targetDate);
       console.log(`[RainApp] Temperature percentiles calculated for ${tempPercentiles.years.length} years`);
+      
+      const sunTimes = calculateSunTimes(dailyData, targetDate);
+      console.log(`[RainApp] Sun times calculated: sunrise ${sunTimes.sunrise}, sunset ${sunTimes.sunset}`);
 
       // Validate daily data before proceeding
       if (dailyStats.totalYears === 0) {
@@ -194,6 +213,7 @@ function App() {
         ...prev,
         rainProbability: dailyStats.probability || 0,
         temperaturePercentiles: tempPercentiles,
+        sunTimes: sunTimes,
         dailyData: dailyData,
         selectedLocation: `${state.city}, ${state.country}`,
         hasDailyData: true
@@ -230,6 +250,7 @@ function App() {
         sessionProbability: (currentPeriod ? (currentPeriod.probability || 0) * 100 : 0),
         temperaturePercentiles: tempPercentiles,
         sessionTemperaturePercentiles: sessionTempPercentiles,
+        sunTimes: sunTimes,
         hourlyData: hourlyData,
         isLoading: false,
         hasData: true,
@@ -509,6 +530,18 @@ function App() {
                       hasData={state.hasDailyData}
                     />
                   </div>
+                  {state.sunTimes && (
+                    <div className="sun-times-section">
+                      <div className="sun-time-row">
+                        <span className="sun-time-icon">🌅</span>
+                        <span className="sun-time-value">{formatTime(state.sunTimes.sunrise)}</span>
+                      </div>
+                      <div className="sun-time-row">
+                        <span className="sun-time-icon">🌇</span>
+                        <span className="sun-time-value">{formatTime(state.sunTimes.sunset)}</span>
+                      </div>
+                    </div>
+                  )}
                   {state.temperaturePercentiles && (
                     <div className="temperature-section">
                       <div className="temperature-row">
