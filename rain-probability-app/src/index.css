@@ -644,3 +644,51 @@ h1, h2, h3 {
     font-size: 10px;
   }
 }
+/* --- Fix tiny sideways scroll + make media fluid --- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden; /* safety net for any 1–2px overflows */
+}
+
+img, svg, canvas, video { max-width: 100%; height: auto; }
+
+/* Inputs should fill their column so the bars align edge-to-edge */
+.input-field,
+.select-field { width: 100%; }
+
+/* In CSS Grid, children default to min-width:auto (can cause overflow). */
+.controls-grid > * { min-width: 0; }
+
+/* Gauge cards should never be wider than the viewport */
+.gauge-card { width: 100%; max-width: 100%; overflow: hidden; }
+
+/* --- Mobile layout tweaks --- */
+@media (max-width: 768px) {
+  /* Let the single-column grid stretch cards edge to edge, not center-narrow */
+  .gauges-grid { justify-items: stretch; }
+
+  /* Stack the gauge card sections vertically on phones so nothing forces overflow */
+  .gauge-card {
+    flex-direction: column;   /* was a row */
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  /* Allow the left gauge to shrink; it’s set to flex-shrink:0 in desktop styles */
+  .gauge-section { flex-shrink: 1; }
+
+  /* Remove fixed minima that can push the card wider than the screen */
+  .temperature-section { min-width: 0; }
+
+  /* Ensure right-side blocks expand to full width when stacked */
+  .sun-times-section,
+  .weather-history-container { width: 100%; }
+
+  /* Slightly smaller number so the large percent doesn’t wrap awkwardly */
+  .gauge-value { font-size: 32px; }
+}
