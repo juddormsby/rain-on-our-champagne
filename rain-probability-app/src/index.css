@@ -153,9 +153,8 @@ h1, h2, h3 {
 
 .temperature-section {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 4px;
   min-width: 100px;
   align-self: flex-start;
   margin-top: 6px;
