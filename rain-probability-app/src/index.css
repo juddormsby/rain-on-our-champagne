@@ -154,10 +154,10 @@ h1, h2, h3 {
 .temperature-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-width: 100px;
   align-self: flex-start;
-  margin-top: 20px;
+  margin-top: 8px;
 }
 
 .temperature-row {
@@ -165,7 +165,7 @@ h1, h2, h3 {
   align-items: center;
   gap: 8px;
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--ink);
 }
@@ -182,27 +182,27 @@ h1, h2, h3 {
 
 /* Sun times section */
 .sun-times-section {
-  margin-top: 16px;
-  padding: 12px;
+  margin-top: 8px;
+  padding: 8px;
   background: var(--bg-cream);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(46,42,40,.04);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(46,42,40,.04);
 }
 
 .sun-times-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .sun-time-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--ink);
   flex: 1;
@@ -210,7 +210,7 @@ h1, h2, h3 {
 }
 
 .sun-time-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .sun-time-value {
@@ -567,21 +567,21 @@ h1, h2, h3 {
 
 /* Weather History Component */
 .weather-history-container {
-  margin-top: 16px;
-  padding: 16px;
+  margin-top: 8px;
+  padding: 10px;
   padding-left: 0;
   background: var(--bg-cream);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(46,42,40,.04);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(46,42,40,.04);
 }
 
 .weather-history-title {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--ink-muted);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   text-align: left;
 }
 
@@ -589,23 +589,23 @@ h1, h2, h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .weather-entry {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
-  padding: 6px;
-  border-radius: 6px;
+  padding: 4px;
+  border-radius: 4px;
   transition: all 0.2s ease;
 }
 
 .weather-entry:hover {
   background: var(--bg-cream);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .weather-entry.loading {
@@ -613,13 +613,13 @@ h1, h2, h3 {
 }
 
 .weather-icon {
-  font-size: 18px;
+  font-size: 14px;
   line-height: 1;
 }
 
 .weather-temps {
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 500;
   color: var(--ink);
   text-align: center;
