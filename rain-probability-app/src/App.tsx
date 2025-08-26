@@ -99,6 +99,61 @@ function App() {
     const totalYears = state.temperaturePercentiles.years.length;
     const rainProbability = currentPeriod ? (currentPeriod.probability || 0) * 100 : 0;
 
+    // Get historical weather data for the session
+    const historicalWeather: Array<{
+      year: number;
+      weather: string;
+      high: number;
+      low: number;
+    }> = [];
+    if (state.hourlyData && state.hourlyData.length > 0) {
+      const years = [2020, 2021, 2022, 2023, 2024];
+      years.forEach(year => {
+        const yearData = state.hourlyData.find(data => data.year === year);
+        if (yearData && yearData.hours) {
+          const sessionHours = yearData.hours.filter(hour => {
+            const hourIndex = new Date(hour.time).getHours();
+            return hourIndex >= (period?.start || 0) && hourIndex < (period?.end || 24);
+          });
+          
+          if (sessionHours.length > 0) {
+            const firstHourWeatherCode = sessionHours[0].weathercode;
+            const sessionTemps = sessionHours.map(h => h.temp).filter(t => t !== null) as number[];
+            
+            if (firstHourWeatherCode !== null && sessionTemps.length > 0) {
+              // Convert weather code to emoji (same logic as in SessionWeatherHistory)
+              let weatherEmoji = '❓';
+              if (firstHourWeatherCode >= 0 && firstHourWeatherCode <= 3) weatherEmoji = '☀️';
+              else if (firstHourWeatherCode >= 45 && firstHourWeatherCode <= 48) weatherEmoji = '🌫️';
+              else if (firstHourWeatherCode >= 51 && firstHourWeatherCode <= 55) weatherEmoji = '🌦️';
+              else if (firstHourWeatherCode >= 56 && firstHourWeatherCode <= 57) weatherEmoji = '🌨️';
+              else if (firstHourWeatherCode >= 61 && firstHourWeatherCode <= 65) weatherEmoji = '🌧️';
+              else if (firstHourWeatherCode >= 66 && firstHourWeatherCode <= 67) weatherEmoji = '🌨️';
+              else if (firstHourWeatherCode >= 71 && firstHourWeatherCode <= 75) weatherEmoji = '🌨️';
+              else if (firstHourWeatherCode === 77) weatherEmoji = '🌨️';
+              else if (firstHourWeatherCode >= 80 && firstHourWeatherCode <= 82) weatherEmoji = '🌧️';
+              else if (firstHourWeatherCode >= 85 && firstHourWeatherCode <= 86) weatherEmoji = '🌨️';
+              else if (firstHourWeatherCode === 95) weatherEmoji = '⛈️';
+              else if (firstHourWeatherCode >= 96 && firstHourWeatherCode <= 99) weatherEmoji = '⛈️';
+              else if (firstHourWeatherCode >= 4 && firstHourWeatherCode <= 44) weatherEmoji = '☁️';
+              else if (firstHourWeatherCode >= 58 && firstHourWeatherCode <= 60) weatherEmoji = '🌧️';
+              else if (firstHourWeatherCode >= 68 && firstHourWeatherCode <= 70) weatherEmoji = '🌨️';
+              else if (firstHourWeatherCode >= 76 && firstHourWeatherCode <= 76) weatherEmoji = '🌨️';
+              else if (firstHourWeatherCode >= 83 && firstHourWeatherCode <= 84) weatherEmoji = '🌧️';
+              else if (firstHourWeatherCode >= 87 && firstHourWeatherCode <= 94) weatherEmoji = '🌨️';
+              
+              historicalWeather.push({
+                year,
+                weather: weatherEmoji,
+                high: Math.round(Math.max(...sessionTemps)),
+                low: Math.round(Math.min(...sessionTemps))
+              });
+            }
+          }
+        }
+      });
+    }
+
     return {
       location: `${state.city}, ${state.country}`,
       date: `${state.selectedMonth}/${state.selectedDay}`,
@@ -109,6 +164,9 @@ function App() {
       tempHigh: sessionTempData?.highP90 ? Math.round(sessionTempData.highP90) : null,
       totalYears: totalYears,
       rainyYears: Math.round((rainProbability / 100) * totalYears),
+      sunrise: state.sunTimes?.sunrise ? formatTime(state.sunTimes.sunrise) : null,
+      sunset: state.sunTimes?.sunset ? formatTime(state.sunTimes.sunset) : null,
+      historicalWeather,
     };
   };
 

@@ -11,6 +11,14 @@ interface AIChickenProps {
     tempHigh: number | null;
     totalYears: number;
     rainyYears: number;
+    sunrise: string | null;
+    sunset: string | null;
+    historicalWeather: Array<{
+      year: number;
+      weather: string;
+      high: number;
+      low: number;
+    }>;
   } | null;
   isVisible: boolean;
 }
@@ -220,7 +228,19 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
           color: 'var(--ink-muted)',
           fontFamily: 'var(--font-body)'
         }}>
-          <strong>Context:</strong> {weatherData.rainProbability}% chance of rain • {weatherData.tempLow}°C-{weatherData.tempHigh}°C • {weatherData.session} session in {weatherData.location}
+          <div style={{ marginBottom: '8px' }}>
+            <strong>Context:</strong> {weatherData.rainProbability}% chance of rain • {weatherData.tempLow}°C-{weatherData.tempHigh}°C • {weatherData.session} session in {weatherData.location}
+          </div>
+          {weatherData.sunrise && weatherData.sunset && (
+            <div style={{ marginBottom: '8px' }}>
+              <strong>Sun:</strong> 🌅 {weatherData.sunrise} • 🌇 {weatherData.sunset}
+            </div>
+          )}
+          {weatherData.historicalWeather.length > 0 && (
+            <div>
+              <strong>Past 5 years:</strong> {weatherData.historicalWeather.map(h => `${h.year}: ${h.weather} ${h.high}°/${h.low}°`).join(' • ')}
+            </div>
+          )}
         </div>
       </div>
     </div>

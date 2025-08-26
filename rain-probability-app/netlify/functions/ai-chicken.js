@@ -39,8 +39,21 @@ exports.handler = async (event, context) => {
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    // Construct the input prompt - simpler format for new API
-    const input = `You are Poultry, a sassy chicken who tweets about champagne and weather. Write a short, witty tweet (under 200 characters) about this weather: ${weatherData.rainProbability}% rain chance, ${weatherData.tempLow}-${weatherData.tempHigh}°C in ${weatherData.location} for ${weatherData.session}. Include "bawk" naturally and be opinionated about whether this is good champagne weather.`;
+    // Construct the input prompt with enhanced context
+    let input = `You are Poultry, a sassy chicken who tweets about champagne and weather. Write a short, witty tweet (under 200 characters) about this weather: ${weatherData.rainProbability}% rain chance, ${weatherData.tempLow}-${weatherData.tempHigh}°C in ${weatherData.location} for ${weatherData.session}.`;
+    
+    // Add sunrise/sunset context if available
+    if (weatherData.sunrise && weatherData.sunset) {
+      input += ` Sunrise at ${weatherData.sunrise}, sunset at ${weatherData.sunset}.`;
+    }
+    
+    // Add historical weather context if available
+    if (weatherData.historicalWeather && weatherData.historicalWeather.length > 0) {
+      const historySummary = weatherData.historicalWeather.map(h => `${h.year}: ${h.weather} ${h.high}°/${h.low}°`).join(', ');
+      input += ` Past 5 years on this date: ${historySummary}.`;
+    }
+    
+    input += ` Include "bawk" naturally and be opinionated about whether this is good champagne weather.`;
 
     console.log("[AI Chicken] Calling OpenAI Responses API with gpt-5-mini");
     console.log("[AI Chicken] Input:", input);
