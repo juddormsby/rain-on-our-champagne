@@ -53,13 +53,13 @@ exports.handler = async (event, context) => {
       input += ` Past 5 years on this date: ${historySummary}.`;
     }
     
-    input += ` Include "bawk" naturally and be opinionated about whether this is good champagne weather.`;
+    input += ` Be opinionated about whether this is good champagne weather.`;
 
-    console.log("[AI Chicken] Calling OpenAI Responses API with gpt-5-mini");
+    console.log("[AI Chicken] Calling OpenAI Responses API with gpt-5-nano");
     console.log("[AI Chicken] Input:", input);
 
     const response = await openai.responses.create({
-      model: "gpt-5-mini",
+      model: "gpt-5-nano",
       input: input,
     });
 
@@ -81,7 +81,7 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({
         recommendation,
         timestamp: new Date().toISOString(),
-        model: "gpt-5-mini",
+        model: "gpt-5-nano",
         weatherContext: weatherData,
       }),
     };
