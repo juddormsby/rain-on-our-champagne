@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { CircularProgress } from './components/CircularProgress';
@@ -78,6 +78,19 @@ function App() {
     hourlyData: [],
     sunTimes: null,
   });
+
+  // Update session probability when selected session changes
+  useEffect(() => {
+    if (state.hasData && state.windowProbabilities[state.selectedSession]) {
+      const currentPeriod = state.windowProbabilities[state.selectedSession];
+      const sessionRainProbability = currentPeriod ? (currentPeriod.probability || 0) * 100 : 0;
+      
+      setState(prev => ({
+        ...prev,
+        sessionProbability: sessionRainProbability
+      }));
+    }
+  }, [state.selectedSession, state.hasData, state.windowProbabilities]);
 
   const getCurrentPeriodData = () => {
     return state.windowProbabilities[state.selectedSession];
