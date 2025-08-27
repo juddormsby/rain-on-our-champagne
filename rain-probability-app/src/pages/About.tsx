@@ -25,11 +25,9 @@ export function About() {
         
         <h2>What can you use it for?</h2>
         
-        <p>To inform you about the likelihood it will rain on your champagne.</p>
+        <p>To inform you about the likelihood it will rain on your champagne. Obviously.</p>
         
-        <p>Obviously.</p>
-        
-        <p>Other questions it may help answer include</p>
+        <p>Other questions it may help answer include:</p>
         <ul>
           <li>How hot will it be for the Alpe D'huez Triathlon (main event is morning of August 6)?</li>
           <li>What weather should I expect when hiking in Svalöv, Sweden on July 15?</li>
