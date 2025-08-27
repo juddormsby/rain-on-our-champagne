@@ -38,7 +38,7 @@ export function About() {
         
         <p>Poultry looks at historical climate data for every year between 1940 and 2024.</p>
         
-        <p>Probabilities reflect these long-term(-ish) averages. For example, in London it rained on 35 out of 47 times (60%) during evening champagne sessions in the post 1940 September 19th period since 1940.</p>
+        <p>Probabilities reflect these long-term(-ish) averages. For example, in London, on September 19th, it has rained on 41 out of 85 days (48%) since 1940.</p>
         
         <p>Temperature falls in the range shown 80% of the time historically. i.e. the high for London on 19th September has fallen between 15 (10th percentile) and 21 (90th percentile) since 1940.</p>
         
