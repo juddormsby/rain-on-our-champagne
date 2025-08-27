@@ -36,6 +36,11 @@ interface AppState {
   dailyData: { daily: DailyData } | null;
   hourlyData: HourlyYearResult[];
   sunTimes: SunTimesResult | null;
+  dataStats: {
+    totalYearsAvailable: number;
+    yearsRetrieved: number;
+    yearsAttempted: number;
+  } | null;
 }
 
 const MONTHS = [
@@ -77,6 +82,7 @@ function App() {
     dailyData: null,
     hourlyData: [],
     sunTimes: null,
+    dataStats: null,
   });
 
   // Update session probability when selected session changes
@@ -323,6 +329,11 @@ function App() {
         sessionTemperaturePercentiles: sessionTempPercentiles,
         sunTimes: sunTimes,
         hourlyData: hourlyData,
+        dataStats: {
+          totalYearsAvailable: dailyStats.years.length,
+          yearsRetrieved: validHourlyYears,
+          yearsAttempted: hourlyData.length
+        },
         isLoading: false,
         hasData: true,
         hasDailyData: true,
@@ -734,6 +745,43 @@ function App() {
                   );
                 })}
               </div>
+
+              {/* Data Statistics */}
+              {state.dataStats && (
+                <div className="card" style={{ 
+                  textAlign: 'center', 
+                  marginBottom: '24px',
+                  background: 'var(--bg-cream)',
+                  border: '1px solid var(--line)'
+                }}>
+                  <div style={{ 
+                    fontFamily: 'var(--font-body)', 
+                    fontSize: '14px', 
+                    color: 'var(--ink-muted)',
+                    marginBottom: '8px'
+                  }}>
+                    Historical Data Retrieved
+                  </div>
+                  <div style={{ 
+                    fontFamily: 'var(--font-display)', 
+                    fontSize: '20px', 
+                    fontWeight: '600',
+                    color: 'var(--bottle-green)',
+                    marginBottom: '8px'
+                  }}>
+                    {state.dataStats.yearsRetrieved} of {state.dataStats.totalYearsAvailable} years
+                  </div>
+                  {state.dataStats.yearsRetrieved < state.dataStats.totalYearsAvailable && (
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: 'var(--ink-muted)',
+                      fontStyle: 'italic'
+                    }}>
+                      Some years may have been unavailable due to API limits
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* AI Chicken */}
               <AIChicken 
