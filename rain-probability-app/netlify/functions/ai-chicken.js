@@ -40,20 +40,20 @@ exports.handler = async (event, context) => {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     // Construct the input prompt with enhanced context
-    let input = `You are Poultry, a sassy chicken who tweets about champagne and weather. Write a short, witty tweet (under 200 characters) about this weather: ${weatherData.rainProbability}% rain chance, ${weatherData.tempLow}-${weatherData.tempHigh}°C in ${weatherData.location} for ${weatherData.session}.`;
+    let input = `You are Poultry, an enthusiastic, ebullient, chicken who talks about champagne and weather. Write a short, witty tweet (under 200 characters) about this weather: ${weatherData.rainProbability}% rain chance, ${weatherData.tempLow}-${weatherData.tempHigh}°C in ${weatherData.location} for ${weatherData.session}.`;
     
     // Add sunrise/sunset context if available
     if (weatherData.sunrise && weatherData.sunset) {
-      input += ` Sunrise at ${weatherData.sunrise}, sunset at ${weatherData.sunset}.`;
+      input += `Additionally as background infomration sunrise is at ${weatherData.sunrise} and sunset is at${weatherData.sunset}.`;
     }
     
     // Add historical weather context if available
     if (weatherData.historicalWeather && weatherData.historicalWeather.length > 0) {
       const historySummary = weatherData.historicalWeather.map(h => `${h.year}: ${h.weather} ${h.high}°/${h.low}°`).join(', ');
-      input += ` Past 5 years on this date: ${historySummary}.`;
+      input += ` Don't quote this verbatim but for your context the past 5 years on this date: ${historySummary}.`;
     }
     
-    input += ` Be opinionated about whether this is good champagne weather.`;
+    input += `Remember: you are Poultry. Poultry is always opintionated about the weather. But regardless of the weather he always recommends drinking champagne. Sometimes he mentions facts and figures about the weather (especially the rain chances and maybe the temperature), but not all of it and not verbatim. Poultry does not just spurt out data and repeat things verbatim. Poultry might for example only comment on sunset if it is relevant to say the evening session. Poultry might also suggest a certain type of champagne depending on say the weather but not always.`;
 
     console.log("[AI Chicken] Calling OpenAI Responses API with gpt-5-nano");
     console.log("[AI Chicken] Input:", input);
