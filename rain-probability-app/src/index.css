@@ -548,10 +548,10 @@ h1, h2, h3 {
   text-align: center;
 }
 
-.back-button {
+.about-content .back-button {
   display: inline-block;
   background: var(--accent-orange);
-  color: white;
+  color: #fff;
   text-decoration: none;
   padding: 12px 24px;
   border-radius: 12px;
@@ -560,9 +560,14 @@ h1, h2, h3 {
   transition: all 0.2s ease;
 }
 
-.back-button:hover {
-  background: var(--accent-amber);
+.about-content .back-button:hover {
+  background: #B35A17;
   text-decoration: none;
+}
+
+.about-content .back-button:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
 }
 
 /* Weather History Component */
