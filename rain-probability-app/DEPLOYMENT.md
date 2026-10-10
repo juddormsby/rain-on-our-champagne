@@ -25,7 +25,7 @@ netlify.toml:
 The build process:
 1. Runs `npm run build` in the `rain-probability-app` directory
 2. Creates a `dist` folder with the built static files
-3. The `netlify/functions/ai-chicken.js` function is deployed for AI features
+3. The `netlify/functions/ai-chicken.cjs` function is deployed for AI features
 
 ## AI Chicken Feature
 
@@ -38,4 +38,4 @@ Once deployed with the environment variable:
 
 - **Build fails with missing dist:** Ensure paths in netlify.toml are correct (fixed)
 - **AI chicken doesn't work:** Check that OPENAI_API_KEY is set in environment variables
-- **Functions not deploying:** Verify functions path is `netlify/functions` relative to base 
+- **Functions not deploying:** Verify functions path is `netlify/functions` relative to base
