@@ -535,7 +535,7 @@ function App() {
                 fontStyle: 'italic',
                 opacity: 0.8
               }}>
-                (some unavailable due to API limits)
+                (results use the years retrieved; some requests failed)
               </span>
             )}
           </div>

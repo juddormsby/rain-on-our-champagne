@@ -193,6 +193,18 @@ export async function fetchHourlyForYears(
   years: number[],
   concurrency = DEFAULT_CONCURRENCY
 ): Promise<HourlyYearResult[]> {
+  return fetchHourlyForYearsPass(lat, lon, month, day, years, concurrency, 0);
+}
+
+async function fetchHourlyForYearsPass(
+  lat: number,
+  lon: number,
+  month: number,
+  day: number,
+  years: number[],
+  concurrency: number,
+  recoveryPass: number
+): Promise<HourlyYearResult[]> {
   // Sort years to prioritize recent data
   const sortedYears = [...years].sort((a, b) => b - a); // Most recent first
   const limit = pLimit(concurrency);
@@ -219,11 +231,11 @@ export async function fetchHourlyForYears(
           const duration = Date.now() - startTime;
           console.log(`[OpenMeteo] Hourly data response for year ${year}: ${response.status} in ${duration}ms`);
           
-          if (response.status === 429) {
-            // Rate limited - only retry with backoff if we haven't hit max retries
+          if (response.status === 429 || response.status === 408 || response.status >= 500) {
+            // Transient API errors can clear on a later attempt.
             if (retryCount < maxRetries) {
               const backoffTime = RATE_LIMIT_BACKOFF_BASE_MS + (retryCount * RATE_LIMIT_BACKOFF_MULTIPLIER);
-              console.warn(`[OpenMeteo] Rate limited for year ${year}, retrying in ${backoffTime}ms`);
+              console.warn(`[OpenMeteo] Request for year ${year} returned ${response.status}, retrying in ${backoffTime}ms`);
               await new Promise(resolve => setTimeout(resolve, backoffTime));
               retryCount++;
               continue;
@@ -286,5 +298,18 @@ export async function fetchHourlyForYears(
   const results = await Promise.all(tasks);
   const successfulYears = results.filter(result => result.hours !== null).length;
   console.log(`[OpenMeteo] Hourly data fetch completed: ${successfulYears}/${results.length} years successful`);
+
+  const missingYears = results.filter(result => result.hours === null).map(result => result.year);
+  if (missingYears.length > 0 && recoveryPass < 2) {
+    const backoffTime = 2000 * Math.pow(2, recoveryPass);
+    console.warn(`[OpenMeteo] Retrying ${missingYears.length} missing years in ${backoffTime}ms`);
+    await new Promise(resolve => setTimeout(resolve, backoffTime));
+    const recovered = await fetchHourlyForYearsPass(
+      lat, lon, month, day, missingYears, concurrency, recoveryPass + 1
+    );
+    const recoveredByYear = new Map(recovered.map(result => [result.year, result]));
+    return results.map(result => recoveredByYear.get(result.year) ?? result);
+  }
+
   return results;
-} 
+}
