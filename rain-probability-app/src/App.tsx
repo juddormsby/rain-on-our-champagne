@@ -510,6 +510,14 @@ function App() {
     <div className="container" style={{ paddingTop: '32px', paddingBottom: '32px' }}>
       {/* Header */}
       <div className="logo-container">
+        <nav className="header-navigation" aria-label="Main navigation">
+          <a href="https://champs.run" className="header-nav-link calculators-button">
+            ← More calculators
+          </a>
+          <Link to="/about" className="header-nav-link about-button">
+            About
+          </Link>
+        </nav>
         <svg className="logo-svg" viewBox="0 0 288 205" xmlns="http://www.w3.org/2000/svg">
           <image
             width="288"
@@ -519,38 +527,6 @@ function App() {
           />
         </svg>
         <h1 className="app-title">WILL IT RAIN ON OUR CHAMPAGNE?</h1>
-        <a href="https://champs.run" className="calculators-button">
-          ← More calculators at champs.run
-        </a>
-        <Link
-          to="/about"
-          className="about-button"
-          style={{
-            position: 'absolute',
-            top: '24px',
-            right: '24px',
-            background: 'transparent',
-            border: '1px solid var(--accent-orange)',
-            color: 'var(--accent-orange)',
-            fontFamily: 'var(--font-body)',
-            fontSize: '14px',
-            fontWeight: '500',
-            padding: '8px 16px',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--accent-orange)';
-            e.currentTarget.style.color = 'white';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--accent-orange)';
-          }}
-        >
-          About
-        </Link>
       </div>
 
       {/* Controls */}
