@@ -28,7 +28,7 @@ interface ChickenResponse {
   timestamp: string;
   fallback?: boolean;
   model?: string;
-  weatherContext?: any;
+  weatherContext?: AIChickenProps['weatherData'];
   error?: string;
 }
 
@@ -161,7 +161,7 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
             lineHeight: '1.5',
             color: 'var(--ink)'
           }}>
-            "{recommendation}"
+            {recommendation}
           </div>
         )}
 
@@ -174,17 +174,18 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
             fontFamily: 'var(--font-body)',
             fontSize: '14px'
           }}>
-            <div style={{ 
+            <div className="loading-dots" role="status" aria-label="Poultry is preparing a response" style={{
               fontSize: '24px', 
               fontWeight: 'bold', 
               color: 'var(--accent-amber)',
               minWidth: '3ch',
               textAlign: 'center',
-              margin: '0 auto 12px'
+              margin: '0 auto'
             }}>
-              ...
+              <span aria-hidden="true">.</span>
+              <span aria-hidden="true">.</span>
+              <span aria-hidden="true">.</span>
             </div>
-            Poultry is sipping champagne and pondering the weather... 🍾
           </div>
         )}
 
@@ -218,31 +219,7 @@ export function AIChicken({ weatherData, isVisible }: AIChickenProps) {
           </div>
         )}
 
-        {/* Weather Summary for Context */}
-        <div className="weather-context" style={{
-          marginTop: '16px',
-          padding: '12px',
-          background: 'var(--paper)',
-          borderRadius: '8px',
-          fontSize: '12px',
-          color: 'var(--ink-muted)',
-          fontFamily: 'var(--font-body)'
-        }}>
-          <div style={{ marginBottom: '8px' }}>
-            <strong>Context:</strong> {weatherData.rainProbability}% chance of rain • {weatherData.tempLow}°C-{weatherData.tempHigh}°C • {weatherData.session} session in {weatherData.location}
-          </div>
-          {weatherData.sunrise && weatherData.sunset && (
-            <div style={{ marginBottom: '8px' }}>
-              <strong>Sun:</strong> 🌅 {weatherData.sunrise} • 🌇 {weatherData.sunset}
-            </div>
-          )}
-          {weatherData.historicalWeather.length > 0 && (
-            <div>
-              <strong>Past 5 years:</strong> {weatherData.historicalWeather.map(h => `${h.year}: ${h.weather} ${h.high}°/${h.low}°`).join(' • ')}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
-} 
+}

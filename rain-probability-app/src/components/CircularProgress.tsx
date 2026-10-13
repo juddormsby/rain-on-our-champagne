@@ -69,7 +69,7 @@ export function CircularProgress({ percentage, label, size = 200, isLoading = fa
             color: isLoading ? 'var(--ink-muted)' : 'var(--ink)'
           }}>
             {isLoading ? (
-              <span className="gauge-loading-dots" role="status" aria-label="Loading session weather data">
+              <span className="loading-dots" role="status" aria-label="Loading session weather data">
                 <span aria-hidden="true">.</span>
                 <span aria-hidden="true">.</span>
                 <span aria-hidden="true">.</span>
