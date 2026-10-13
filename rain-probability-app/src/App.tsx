@@ -519,6 +519,9 @@ function App() {
           />
         </svg>
         <h1 className="app-title">WILL IT RAIN ON OUR CHAMPAGNE?</h1>
+        <a href="https://champs.run" className="calculators-button">
+          ← More calculators at champs.run
+        </a>
         <Link
           to="/about"
           className="about-button"
