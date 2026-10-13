@@ -14,7 +14,7 @@ export function CircularProgress({ percentage, label, size = 200, isLoading = fa
 
   // Show loading or no-data state
   const showPlaceholder = isLoading || !hasData;
-  const displayValue = isLoading ? '...' : hasData ? `${Math.round(percentage)}%` : '—';
+  const displayValue = hasData ? `${Math.round(percentage)}%` : '—';
 
   return (
     <div className="gauge-container" style={{ width: size, height: size * 0.6 + 60 }}>
@@ -65,13 +65,19 @@ export function CircularProgress({ percentage, label, size = 200, isLoading = fa
         <div className="gauge-text">
           <div className="gauge-label">{label}</div>
           <div className="gauge-value" style={{ 
-            opacity: showPlaceholder ? 0.5 : 1,
+            opacity: showPlaceholder && !isLoading ? 0.5 : 1,
             color: isLoading ? 'var(--ink-muted)' : 'var(--ink)'
           }}>
-            {displayValue}
+            {isLoading ? (
+              <span className="gauge-loading-dots" role="status" aria-label="Loading session weather data">
+                <span aria-hidden="true">.</span>
+                <span aria-hidden="true">.</span>
+                <span aria-hidden="true">.</span>
+              </span>
+            ) : displayValue}
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}
