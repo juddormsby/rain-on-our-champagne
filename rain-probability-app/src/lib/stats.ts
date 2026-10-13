@@ -34,11 +34,10 @@ export function calculateSunTimes(
   let sunsetTime: string | null = null;
   
   for (let i = 0; i < times.length; i++) {
-    const date = new Date(times[i]);
-    const dateMMDD = formatMMDD(date);
+    const dateMMDD = times[i].slice(5, 10);
     
     if (dateMMDD === targetMMDD) {
-      const year = date.getFullYear();
+      const year = Number(times[i].slice(0, 4));
       
       if (year > latestYear && sunrise[i] && sunset[i]) {
         latestYear = year;
@@ -93,13 +92,12 @@ export function calculateTemperaturePercentiles(
   const years: number[] = [];
   
   for (let i = 0; i < times.length; i++) {
-    const date = new Date(times[i]);
-    const mmdd = formatMMDD(date);
+    const mmdd = times[i].slice(5, 10);
     
     if (mmdd === targetMMDD && tempMax[i] != null && tempMin[i] != null) {
       highs.push(tempMax[i]);
       lows.push(tempMin[i]);
-      years.push(date.getFullYear());
+      years.push(Number(times[i].slice(0, 4)));
     }
   }
   
@@ -199,12 +197,11 @@ export function calculateDailyRainProbability(
   const years: number[] = [];
   
   for (let i = 0; i < times.length; i++) {
-    const date = new Date(times[i]);
-    const dateMMDD = formatMMDD(date);
+    const dateMMDD = times[i].slice(5, 10);
     
     if (dateMMDD !== targetMMDD) continue;
     
-    const year = date.getFullYear();
+    const year = Number(times[i].slice(0, 4));
     years.push(year);
     
     const rain = rainSum?.[i] ?? null;
@@ -299,4 +296,4 @@ export function calculateWindowProbabilities(
 export function formatPercentage(probability: number | null, decimals = 0): string {
   if (probability === null) return 'N/A';
   return `${(probability * 100).toFixed(decimals)}%`;
-} 
+}

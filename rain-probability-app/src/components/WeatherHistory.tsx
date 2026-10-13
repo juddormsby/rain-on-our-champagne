@@ -77,11 +77,11 @@ export function WeatherHistory({ dailyData, isLoading, targetDate }: WeatherHist
     const targetMMDD = formatMMDD(targetDate);
     
     for (let i = 0; i < dailyData.daily.time.length; i++) {
-      const date = new Date(dailyData.daily.time[i]);
-      const dateMMDD = formatMMDD(date);
+      const day = dailyData.daily.time[i];
+      const dateMMDD = day.slice(5, 10);
       
       if (dateMMDD === targetMMDD) {
-        const year = date.getFullYear();
+        const year = Number(day.slice(0, 4));
         
         // Only include years from our target list
         if (years.includes(year) && dailyData.daily.weather_code && dailyData.daily.temperature_2m_max && dailyData.daily.temperature_2m_min) {
@@ -147,4 +147,4 @@ export function WeatherHistory({ dailyData, isLoading, targetDate }: WeatherHist
       </div>
     </div>
   );
-} 
+}

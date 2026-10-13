@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import { CircularProgress } from './components/CircularProgress';
@@ -43,6 +43,125 @@ interface AppState {
   } | null;
 }
 
+interface LocationCache {
+  key: string;
+  latitude: number;
+  longitude: number;
+  dailyData: { daily: DailyData };
+  dailyIndexes: Map<string, number[]>;
+  hourlyByDate: Map<string, HourlyYearResult[]>;
+}
+
+function locationKey(state: AppState): string {
+  if (state.latitude.trim() && state.longitude.trim()) {
+    return `coordinates:${Number(state.latitude)},${Number(state.longitude)}`;
+  }
+  return `city:${state.city.trim().toLowerCase()}|${state.country.trim().toLowerCase()}`;
+}
+
+function selectedDate(state: AppState): { key: string; date: Date } | null {
+  const month = Number(state.selectedMonth);
+  const day = Number(state.selectedDay);
+  if (!Number.isInteger(month) || !Number.isInteger(day)) return null;
+
+  // Leap year allows 29 February while rejecting dates such as 31 February.
+  const date = new Date(2024, month - 1, day);
+  if (date.getMonth() + 1 !== month || date.getDate() !== day) return null;
+
+  return {
+    key: `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+    date,
+  };
+}
+
+function createLocationCache(
+  key: string,
+  latitude: number,
+  longitude: number,
+  dailyData: { daily: DailyData }
+): LocationCache {
+  const dailyIndexes = new Map<string, number[]>();
+  dailyData.daily.time.forEach((date, index) => {
+    const calendarDay = date.slice(5, 10);
+    const indexes = dailyIndexes.get(calendarDay) || [];
+    indexes.push(index);
+    dailyIndexes.set(calendarDay, indexes);
+  });
+
+  return { key, latitude, longitude, dailyData, dailyIndexes, hourlyByDate: new Map() };
+}
+
+function dailyDataForDate(cache: LocationCache, dateKey: string): { daily: DailyData } {
+  const indexes = cache.dailyIndexes.get(dateKey) || [];
+  const source = cache.dailyData.daily;
+  const pick = <T,>(values: T[] | undefined): T[] | undefined =>
+    values?.length ? indexes.map(index => values[index]) : undefined;
+
+  return {
+    daily: {
+      time: indexes.map(index => source.time[index]),
+      precipitation_sum: indexes.map(index => source.precipitation_sum[index]),
+      rain_sum: indexes.map(index => source.rain_sum[index]),
+      temperature_2m_max: pick(source.temperature_2m_max),
+      temperature_2m_min: pick(source.temperature_2m_min),
+      temperature_2m_mean: pick(source.temperature_2m_mean),
+      weather_code: pick(source.weather_code),
+      sunrise: pick(source.sunrise),
+      sunset: pick(source.sunset),
+    },
+  };
+}
+
+function showCachedDate(state: AppState, cache: LocationCache | null): AppState {
+  const selection = selectedDate(state);
+  if (!cache || cache.key !== locationKey(state) || !selection) {
+    return {
+      ...state,
+      hasDailyData: false,
+      hasData: false,
+      dailyData: null,
+      hourlyData: [],
+      windowProbabilities: {},
+      temperaturePercentiles: null,
+      sessionTemperaturePercentiles: null,
+      sunTimes: null,
+      rainProbability: 0,
+      sessionProbability: 0,
+      dataStats: null,
+    };
+  }
+
+  const dailyData = dailyDataForDate(cache, selection.key);
+  const dailyStats = calculateDailyRainProbability(dailyData, selection.date);
+  if (dailyStats.totalYears === 0) {
+    return showCachedDate(state, null);
+  }
+
+  const hourlyData = cache.hourlyByDate.get(selection.key) || [];
+  const yearsRetrieved = hourlyData.filter(year => year.hours !== null).length;
+  const hasData = yearsRetrieved > 0;
+  const windowProbabilities = hasData ? calculateWindowProbabilities(hourlyData) : {};
+
+  return {
+    ...state,
+    dailyData,
+    hourlyData: hasData ? hourlyData : [],
+    rainProbability: (dailyStats.probability || 0) * 100,
+    temperaturePercentiles: calculateTemperaturePercentiles(dailyData, selection.date),
+    sunTimes: calculateSunTimes(dailyData, selection.date),
+    windowProbabilities,
+    sessionProbability: (windowProbabilities[state.selectedSession]?.probability || 0) * 100,
+    sessionTemperaturePercentiles: hasData ? calculateSessionTemperaturePercentiles(hourlyData) : null,
+    hasDailyData: true,
+    hasData,
+    dataStats: hourlyData.length ? {
+      totalYearsAvailable: dailyStats.years.length,
+      yearsRetrieved,
+      yearsAttempted: hourlyData.length,
+    } : null,
+  };
+}
+
 const MONTHS = [
   { value: '01', label: 'January' },
   { value: '02', label: 'February' },
@@ -84,6 +203,17 @@ function App() {
     sunTimes: null,
     dataStats: null,
   });
+  const locationCache = useRef<LocationCache | null>(null);
+
+  const changeDate = (month: string, day: string) => {
+    const cache = locationCache.current;
+    setState(prev => showCachedDate({
+      ...prev,
+      selectedMonth: month,
+      selectedDay: day,
+      error: null,
+    }, cache));
+  };
 
   // Update session probability when selected session changes
   useEffect(() => {
@@ -209,12 +339,22 @@ function App() {
   };
 
   const fetchRainData = async (retryCount = 0) => {
+    const selection = selectedDate(state);
+    if (!selection) {
+      setState(prev => ({ ...prev, error: 'Please choose a valid day and month' }));
+      return;
+    }
+
+    const requestLocationKey = locationKey(state);
+    let cache = locationCache.current?.key === requestLocationKey ? locationCache.current : null;
     let latitude: number, longitude: number;
 
     console.log(`[RainApp] Starting data fetch (attempt ${retryCount + 1})`);
 
-    // If coordinate inputs are filled, use them
-    if (state.latitude.trim() && state.longitude.trim()) {
+    if (cache) {
+      latitude = cache.latitude;
+      longitude = cache.longitude;
+    } else if (state.latitude.trim() && state.longitude.trim()) {
       const lat = parseFloat(state.latitude);
       const lon = parseFloat(state.longitude);
       
@@ -259,86 +399,67 @@ function App() {
       }
     }
 
-    // Set loading but preserve existing data initially
+    // Keep any daily result visible while the selected date's hourly data loads.
     setState(prev => ({ ...prev, isLoading: true, error: null, showCoordinateInput: false }));
 
     try {
-      const targetDate = new Date(2024, parseInt(state.selectedMonth) - 1, parseInt(state.selectedDay));
-      console.log(`[RainApp] Target date: ${targetDate.toISOString().slice(0, 10)}`);
+      console.log(`[RainApp] Target date: ${selection.date.toISOString().slice(0, 10)}`);
 
-      // Get daily data for rain probability calculation
-      console.log('[RainApp] Fetching daily data...');
-      const dailyData = await fetchDaily(latitude, longitude);
-      console.log(`[RainApp] Daily data received, time entries: ${dailyData.daily?.time?.length || 0}`);
-      
-      const dailyStats = calculateDailyRainProbability(dailyData, targetDate);
+      if (!cache) {
+        console.log('[RainApp] Fetching daily data...');
+        const dailyData = await fetchDaily(latitude, longitude);
+        console.log(`[RainApp] Daily data received, time entries: ${dailyData.daily?.time?.length || 0}`);
+        cache = createLocationCache(requestLocationKey, latitude, longitude, dailyData);
+        locationCache.current = cache;
+      }
+
+      const dailyData = dailyDataForDate(cache, selection.key);
+      const dailyStats = calculateDailyRainProbability(dailyData, selection.date);
       console.log(`[RainApp] Daily stats: ${dailyStats.totalYears} years, ${dailyStats.rainyYears} rainy, probability: ${dailyStats.probability}`);
-      
-      const tempPercentiles = calculateTemperaturePercentiles(dailyData, targetDate);
-      console.log(`[RainApp] Temperature percentiles calculated for ${tempPercentiles.years.length} years`);
-      
-      const sunTimes = calculateSunTimes(dailyData, targetDate);
-      console.log(`[RainApp] Sun times calculated: sunrise ${sunTimes.sunrise}, sunset ${sunTimes.sunset}`);
 
-      // Validate daily data before proceeding
       if (dailyStats.totalYears === 0) {
         throw new Error('No historical data available for this date and location');
       }
 
-      // Update state with daily data immediately for early painting
-      setState(prev => ({
-        ...prev,
-        rainProbability: dailyStats.probability || 0,
-        temperaturePercentiles: tempPercentiles,
-        sunTimes: sunTimes,
-        dailyData: dailyData,
-        selectedLocation: `${state.city}, ${state.country}`,
-        hasDailyData: true
-      }));
+      setState(prev => showCachedDate({ ...prev, isLoading: true }, locationCache.current));
 
-      // Get hourly data for session calculations
-      console.log(`[RainApp] Fetching hourly data for ${dailyStats.years.length} years...`);
-      const hourlyData = await fetchHourlyForYears(
-        latitude,
-        longitude,
-        targetDate.getMonth() + 1,
-        targetDate.getDate(),
-        dailyStats.years
+      // Reuse successful hourly years for this location and date. An explicit
+      // second check retries only the years that previously failed.
+      const previousHourly = cache.hourlyByDate.get(selection.key) || [];
+      const successfulByYear = new Map(previousHourly
+        .filter(result => result.hours !== null)
+        .map(result => [result.year, result]));
+      const missingYears = dailyStats.years.filter(year => !successfulByYear.has(year));
+
+      if (missingYears.length > 0) {
+        console.log(`[RainApp] Fetching hourly data for ${missingYears.length} years...`);
+        const fetched = await fetchHourlyForYears(
+          latitude,
+          longitude,
+          selection.date.getMonth() + 1,
+          selection.date.getDate(),
+          missingYears
+        );
+        fetched.forEach(result => successfulByYear.set(result.year, result));
+      }
+
+      const hourlyData = dailyStats.years.map(year =>
+        successfulByYear.get(year) || { year, hours: null }
       );
-
-      // Validate hourly data
+      cache.hourlyByDate.set(selection.key, hourlyData);
       const validHourlyYears = hourlyData.filter(year => year.hours !== null).length;
       console.log(`[RainApp] Hourly data received for ${validHourlyYears}/${hourlyData.length} years`);
-      
+
       if (validHourlyYears === 0) {
         console.warn('[RainApp] No valid hourly data received, using daily data only');
       }
 
-      const windowProbs = calculateWindowProbabilities(hourlyData);
-      const sessionTempPercentiles = calculateSessionTemperaturePercentiles(hourlyData);
-      const currentPeriod = windowProbs[state.selectedSession];
-
       console.log('[RainApp] All calculations completed successfully');
-
-      setState(prev => ({
+      setState(prev => showCachedDate({
         ...prev,
-        windowProbabilities: windowProbs,
-        rainProbability: (dailyStats.probability || 0) * 100,
-        sessionProbability: (currentPeriod ? (currentPeriod.probability || 0) * 100 : 0),
-        temperaturePercentiles: tempPercentiles,
-        sessionTemperaturePercentiles: sessionTempPercentiles,
-        sunTimes: sunTimes,
-        hourlyData: hourlyData,
-        dataStats: {
-          totalYearsAvailable: dailyStats.years.length,
-          yearsRetrieved: validHourlyYears,
-          yearsAttempted: hourlyData.length
-        },
         isLoading: false,
-        hasData: true,
-        hasDailyData: true,
         selectedLocation: `${state.city}, ${state.country}`,
-      }));
+      }, locationCache.current));
 
     } catch (error) {
       console.error('[RainApp] Error during data fetch:', error);
@@ -437,7 +558,7 @@ function App() {
             id="city"
             type="text"
             value={state.city}
-            onChange={(e) => setState(prev => ({ ...prev, city: e.target.value }))}
+            onChange={(e) => setState(prev => showCachedDate({ ...prev, city: e.target.value }, locationCache.current))}
             className="input-field"
             style={{ width: '100%' }}
             placeholder="Enter city name"
@@ -450,7 +571,7 @@ function App() {
             id="country"
             type="text"
             value={state.country}
-            onChange={(e) => setState(prev => ({ ...prev, country: e.target.value }))}
+            onChange={(e) => setState(prev => showCachedDate({ ...prev, country: e.target.value }, locationCache.current))}
             className="input-field"
             style={{ width: '100%' }}
             placeholder="Enter country"
@@ -466,7 +587,7 @@ function App() {
               min="1"
               max="31"
               value={state.selectedDay}
-              onChange={(e) => setState(prev => ({ ...prev, selectedDay: e.target.value }))}
+              onChange={(e) => changeDate(state.selectedMonth, e.target.value)}
               className="input-field"
               style={{ width: '100%' }}
             />
@@ -476,7 +597,7 @@ function App() {
             <select
               id="month"
               value={state.selectedMonth}
-              onChange={(e) => setState(prev => ({ ...prev, selectedMonth: e.target.value }))}
+              onChange={(e) => changeDate(e.target.value, state.selectedDay)}
               className="select-field"
               style={{ width: '100%' }}
             >
@@ -575,7 +696,7 @@ function App() {
                   min="-90"
                   max="90"
                   value={state.latitude}
-                  onChange={(e) => setState(prev => ({ ...prev, latitude: e.target.value }))}
+                  onChange={(e) => setState(prev => showCachedDate({ ...prev, latitude: e.target.value }, locationCache.current))}
                   className="input-field"
                   style={{ width: '100%' }}
                   placeholder="e.g. 51.5074"
@@ -593,7 +714,7 @@ function App() {
                   min="-180"
                   max="180"
                   value={state.longitude}
-                  onChange={(e) => setState(prev => ({ ...prev, longitude: e.target.value }))}
+                  onChange={(e) => setState(prev => showCachedDate({ ...prev, longitude: e.target.value }, locationCache.current))}
                   className="input-field"
                   style={{ width: '100%' }}
                   placeholder="e.g. -0.1278"
@@ -614,7 +735,7 @@ function App() {
         </div>
       )}
 
-      {state.isLoading ? (
+      {state.isLoading && !state.hasDailyData ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
           <LoadingSpinner />
         </div>
@@ -654,7 +775,7 @@ function App() {
                        <WeatherHistory 
                          key={`weather-history-${state.selectedMonth}-${state.selectedDay}`}
                          dailyData={state.dailyData}
-                         isLoading={state.isLoading}
+                         isLoading={false}
                          targetDate={new Date(2024, parseInt(state.selectedMonth) - 1, parseInt(state.selectedDay))}
                        />
                        
@@ -682,7 +803,7 @@ function App() {
                       percentage={state.sessionProbability}
                       label={`Rain during ${getCurrentPeriodLabel()} session`}
                       size={200}
-                      isLoading={state.isLoading}
+                      isLoading={state.isLoading && !state.hasData}
                       hasData={state.hasData}
                     />
                   </div>
@@ -711,7 +832,7 @@ function App() {
                       <SessionWeatherHistory 
                         key={`session-weather-history-${state.selectedMonth}-${state.selectedDay}-${state.selectedSession}`}
                         hourlyData={state.hourlyData}
-                        isLoading={state.isLoading}
+                        isLoading={state.isLoading && !state.hasData}
                         selectedSession={state.selectedSession}
                       />
                     </div>
@@ -753,7 +874,7 @@ function App() {
                         fontWeight: '700',
                         color: windowData?.probability && windowData.probability > 0.3 ? 'var(--accent-orange)' : 'var(--bottle-green)'
                       }}>
-                        {windowData ? Math.round((windowData.probability || 0) * 100) : 0}%
+                        {windowData ? `${Math.round((windowData.probability || 0) * 100)}%` : '—'}
                       </div>
                       {windowData && (
                         <div style={{ 
